@@ -41,6 +41,7 @@ model User {
   approved_at  DateTime?
   availability String?
 
+  experience String[]
   email      String? @unique
   username   String? @unique
   name       String? @db.VarChar(255)
