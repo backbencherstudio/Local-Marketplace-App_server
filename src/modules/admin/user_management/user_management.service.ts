@@ -20,13 +20,13 @@ export class UserManagementService {
           name: true,
           phone_number: true,
           address: true,
+          experience: true,
           city: true,
           state: true,
           country: true,
           zip_code: true,
           created_at: true,
           updated_at: true,
-          experience: true, 
        }
     });
     return users;
