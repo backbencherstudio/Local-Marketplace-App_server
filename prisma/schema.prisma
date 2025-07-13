@@ -40,7 +40,7 @@ model User {
 
   approved_at  DateTime?
   availability String?
-
+  about        String?
   experience String[]
   email      String? @unique
   username   String? @unique
