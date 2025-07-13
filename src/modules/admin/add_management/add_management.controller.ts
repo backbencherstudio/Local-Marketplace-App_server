@@ -2,33 +2,27 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { AddManagementService } from './add_management.service';
 import { CreateAddManagementDto } from './dto/create-add_management.dto';
 import { UpdateAddManagementDto } from './dto/update-add_management.dto';
+import { CreateCategoryDto } from './dto/create-category-dto';
 
 @Controller('add-management')
 export class AddManagementController {
-  constructor(private readonly addManagementService: AddManagementService) {}
-
-  @Post()
-  create(@Body() createAddManagementDto: CreateAddManagementDto) {
-    return this.addManagementService.create(createAddManagementDto);
-  }
+  constructor(private readonly addManagementService: AddManagementService) { }
 
   @Get()
   findAll() {
-    return this.addManagementService.findAll();
+    return this.addManagementService.getAllCategories();
+  }
+  @Get('parents')
+  getParentCategories() {
+    return this.addManagementService.getAllparent();
+  }
+  @Get('categories/:id')
+  getCategoriesByParentId(@Param('id') parentId: string) {
+    return this.addManagementService.getCategoriesByParentId(parentId);
+  }
+  @Post('category')
+  createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+    return this.addManagementService.createCategory(createCategoryDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.addManagementService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAddManagementDto: UpdateAddManagementDto) {
-    return this.addManagementService.update(+id, updateAddManagementDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.addManagementService.remove(+id);
-  }
 }
