@@ -102,8 +102,46 @@ model User {
   payment_transactions PaymentTransaction[]
 
   @@map("users")
+  Services Services[]
 }
 
+
+
+model Category{
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+  parent_id String?
+  title  String?
+  slug   String? @unique
+  Services Services[]
+  @@map("categories")
+}
+
+
+//model ads
+model Services {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+  status Int?    @default(1) @db.SmallInt
+  title  String?
+  category_id String?
+  category    Category? @relation(fields: [category_id], references: [id])
+  body   String? @db.Text
+  thumbnail String?
+  description String? @db.Text
+  price String?
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+  expires_at DateTime?
+  location String?
+  username String?
+  @@map("services")
+
+}
 
 model Ucode {
   id         String   @id @default(cuid())

@@ -8,14 +8,31 @@ import { Suspended } from '@prisma/client';
 @Injectable()
 export class UserManagementService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
   create(createUserManagementDto: CreateUserManagementDto) {
     return 'This action adds a new userManagement';
   }
 
-async findAllUsers(userType?: string) {
-    // If userType is provided, filter by it
-    const filterCondition = userType ? { type: userType } : {};
+  async findAllUsers(userType?: string, status?: number, country?: string, state?: string, city?: string) {
+    const filterCondition: any = {};
+
+    // Applying filters based on userType
+    if (userType) {
+      filterCondition.type = userType;
+    }
+
+    if (status) {
+      filterCondition.status = status;
+    }
+    if (country) {
+      filterCondition.country = country;
+    }
+    if (state) {
+      filterCondition.state = state;
+    }
+    if (city) {
+      filterCondition.city = city;
+    }
 
     const users = await this.prisma.user.findMany({
       where: filterCondition,
@@ -34,11 +51,18 @@ async findAllUsers(userType?: string) {
         created_at: true,
         updated_at: true,
         status: true,
-        type: true, 
+        type: true,
       },
     });
 
     if (users.length === 0) {
+      let noUsersMessage = 'No users found';
+      if (userType === 'Seller') {
+        noUsersMessage = 'No sellers found';
+      } else if (userType === 'Buyer') {
+        noUsersMessage = 'No buyers found';
+      }
+
       return {
         message: "success",
         data: [{
@@ -55,6 +79,7 @@ async findAllUsers(userType?: string) {
           created_at: null,
           updated_at: null
         }],
+        messageDetail: noUsersMessage,
       };
     }
 
@@ -78,7 +103,7 @@ async findAllUsers(userType?: string) {
       data: formattedUsers,
     };
   }
-async findOne(id: string) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -119,89 +144,101 @@ async findOne(id: string) {
         bio: user.about || 'No bio provided',
       }
     };
-}
-async suspendUser(id: string, suspensionType: Suspended) {
-  let suspendedUntil: Date | null = null;
-  const currentDate = new Date();
-
-  switch (suspensionType) {
-    case Suspended.Until_i_Decide:
-      suspendedUntil = null; 
-      break;
-    case Suspended.One_Week:
-      suspendedUntil = new Date(currentDate.setDate(currentDate.getDate() + 7)); 
-      break;
-    case Suspended.One_Month:
-      suspendedUntil = new Date(currentDate.setMonth(currentDate.getMonth() + 1)); 
-      break;
-    case Suspended.Three_Months:
-      suspendedUntil = new Date(currentDate.setMonth(currentDate.getMonth() + 3)); 
-      break;
   }
+  async suspendUser(id: string, suspensionType: Suspended) {
+    let suspendedUntil: Date | null = null;
+    const currentDate = new Date();
 
-  const user = await this.prisma.user.update({
-    where: { id },
-    data: {
-      status: 0, 
-      suspended_at: currentDate, 
-      suspended_until: suspendedUntil, 
-    },
-  });
+    switch (suspensionType) {
+      case Suspended.Until_i_Decide:
+        suspendedUntil = null;
+        break;
+      case Suspended.One_Week:
+        suspendedUntil = new Date(currentDate);
+        suspendedUntil.setDate(suspendedUntil.getDate() + 7);
+        break;
+      case Suspended.One_Month:
+        suspendedUntil = new Date(currentDate);
+        suspendedUntil.setMonth(suspendedUntil.getMonth() + 1);
+        break;
+      case Suspended.Three_Months:
+        suspendedUntil = new Date(currentDate);
+        suspendedUntil.setMonth(suspendedUntil.getMonth() + 3);
+        break;
+    }
+    const userExists = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!userExists) {
+      return {
+        message: "User not found",
+        data: null,
+      };
+    }
 
-  if (!user) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        status: 0,
+        suspended_at: currentDate,
+        suspended_until: suspendedUntil,
+      },
+    });
+
+    if (!user) {
+      return {
+        message: "User not found",
+        data: null,
+      };
+    }
+
     return {
-      message: "User not found",
-      data: null,
+      message: "User suspended successfully",
+      data: {
+        ...user,
+        created_at: user.created_at ? user.created_at.toISOString() : null,
+        updated_at: user.updated_at ? user.updated_at.toISOString() : null,
+        phone_number: user.phone_number || 'No phone number provided',
+        city: user.city || 'No city provided',
+        state: user.state || 'No state provided',
+        country: user.country || 'No country provided',
+        zip_code: user.zip_code || 'No zip code provided',
+        bio: user.about || 'No bio provided',
+        suspended_at: user.suspended_at ? user.suspended_at.toISOString() : null,
+        suspended_until: user.suspended_until ? user.suspended_until.toISOString() : null,
+      }
     };
   }
+  async activeUser(id: string) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        status: 1,
+        suspended_at: null,
+        suspended_until: null,
+      },
+    });
 
-  return {
-    message: "User suspended successfully",
-    data: {
-      ...user,
-      created_at: user.created_at ? user.created_at.toISOString() : null,
-      updated_at: user.updated_at ? user.updated_at.toISOString() : null,
-      phone_number: user.phone_number || 'No phone number provided',
-      city: user.city || 'No city provided',
-      state: user.state || 'No state provided',
-      country: user.country || 'No country provided',
-      zip_code: user.zip_code || 'No zip code provided',
-      bio: user.about || 'No bio provided',
-      suspended_at: user.suspended_at ? user.suspended_at.toISOString() : null,
-      suspended_until: user.suspended_until ? user.suspended_until.toISOString() : null,
+    if (!user) {
+      return {
+        message: "User not found",
+        data: null,
+      };
     }
-  };
-}
-async activeUser(id: string) {
-  const user = await this.prisma.user.update({
-    where: { id },
-    data: {
-      status: 1, 
-      suspended_at: null, 
-      suspended_until: null, 
-    },
-  });
 
-  if (!user) {
     return {
-      message: "User not found",
-      data: null,
+      message: "User activated successfully",
+      data: {
+        ...user,
+        created_at: user.created_at ? user.created_at.toISOString() : null,
+        updated_at: user.updated_at ? user.updated_at.toISOString() : null,
+        phone_number: user.phone_number || 'No phone number provided',
+        city: user.city || 'No city provided',
+        state: user.state || 'No state provided',
+        country: user.country || 'No country provided',
+        zip_code: user.zip_code || 'No zip code provided',
+        bio: user.about || 'No bio provided',
+      }
     };
   }
-
-  return {
-    message: "User activated successfully",
-    data: {
-      ...user,
-      created_at: user.created_at ? user.created_at.toISOString() : null,
-      updated_at: user.updated_at ? user.updated_at.toISOString() : null,
-      phone_number: user.phone_number || 'No phone number provided',
-      city: user.city || 'No city provided',
-      state: user.state || 'No state provided',
-      country: user.country || 'No country provided',
-      zip_code: user.zip_code || 'No zip code provided',
-      bio: user.about || 'No bio provided',
-    }
-  };
-}
 }
