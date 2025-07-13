@@ -14,12 +14,12 @@ export class UserManagementController {
 
   @Get()
   findAll() {
-    return this.userManagementService.findAll();
+    return this.userManagementService.findAllUsers();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userManagementService.findOne(+id);
+    return this.userManagementService.findOne(id);
   }
 
   @Patch(':id')
