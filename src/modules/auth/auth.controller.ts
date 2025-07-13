@@ -27,7 +27,7 @@ import { AuthGuard } from '@nestjs/passport';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @ApiOperation({ summary: 'Get user details' })
   @ApiBearerAuth()
@@ -52,16 +52,12 @@ export class AuthController {
   @Post('register')
   async create(@Body() data: CreateUserDto) {
     try {
-      const name = data.name;
       const first_name = data.first_name;
       const last_name = data.last_name;
       const email = data.email;
       const password = data.password;
       const type = data.type;
 
-      if (!name) {
-        throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
-      }
       if (!first_name) {
         throw new HttpException(
           'First name not provided',
@@ -85,7 +81,6 @@ export class AuthController {
       }
 
       const response = await this.authService.register({
-        name: name,
         first_name: first_name,
         last_name: last_name,
         email: email,
@@ -109,14 +104,15 @@ export class AuthController {
   async login(@Req() req: Request) {
     try {
       const user_id = req.user.id;
-
       const user_email = req.user.email;
+      const isEmailVerified = req.user?.email_verified_at;
 
-      const response = await this.authService.login({
-        userId: user_id,
-        email: user_email,
-      });
-
+      let response: any;
+      if (!isEmailVerified) {
+        response = await this.authService.resendVerificationEmail(user_email);
+      } else {
+        response = await this.authService.login({ userId: user_id, email: user_email });
+      }
       return response;
     } catch (error) {
       return {

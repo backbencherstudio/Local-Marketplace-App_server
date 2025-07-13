@@ -14,7 +14,7 @@ export class UserManagementController {
 
   @Get()
   findAll() {
-    return this.userManagementService.findAll();
+    // return this.userManagementService.findAll();
   }
 
   @Get(':id')
