@@ -45,6 +45,4 @@ export class AddManagementService {
     const categories = await this.prisma.category.findMany();
     return categories;
   }
-
-
 }
