@@ -31,6 +31,19 @@ model Account {
   @@map("accounts")
 }
 
+enum Suspended {
+   Until_i_Decide
+   One_Week
+   One_Month
+   Three_Months
+}
+
+enum userType {
+  seller
+  buyer
+  admin
+}
+
 model User {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -40,7 +53,7 @@ model User {
 
   approved_at  DateTime?
   availability String?
-
+  about        String?
   experience String[]
   email      String? @unique
   username   String? @unique
@@ -59,6 +72,10 @@ model User {
   zip_code      String?
   gender        String?
   date_of_birth DateTime? @db.Date
+
+  //suspend 
+  suspended_at DateTime?
+  suspended_until DateTime?
 
   // billing id. e.g. stripe customer id
   billing_id String?
