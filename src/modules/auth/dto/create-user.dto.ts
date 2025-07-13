@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, MinLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 export class CreateUserDto {
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   name?: string;
 
@@ -23,9 +23,14 @@ export class CreateUserDto {
   @ApiProperty()
   password: string;
 
+  @IsNotEmpty()
+  @IsEnum(['buyer', 'seller'], {
+    message: 'type must be either buyer or seller',
+  })
   @ApiProperty({
     type: String,
-    example: 'user',
+    enum: ['buyer', 'seller'],
+    example: 'buyer',
   })
   type?: string;
 }

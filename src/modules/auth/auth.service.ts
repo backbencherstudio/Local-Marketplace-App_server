@@ -19,7 +19,137 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private mailService: MailService,
-  ) {}
+  ) { }
+
+  async register({
+    first_name,
+    last_name,
+    email,
+    password,
+    type,
+  }: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    type?: string;
+  }) {
+    try {
+      // Check if email already exist
+      const userEmailExist = await UserRepository.exist({
+        field: 'email',
+        value: String(email),
+      });
+
+      if (userEmailExist) {
+        return {
+          statusCode: 401,
+          message: 'Email already exist',
+        };
+      }
+
+      const user = await UserRepository.createUser({
+        first_name: first_name,
+        last_name: last_name,
+        email: email,
+        password: password,
+        type: type,
+      });
+
+      if (user == null && user.success == false) {
+        return {
+          success: false,
+          message: 'Failed to create account',
+        };
+      }
+
+      // create stripe customer account
+      const stripeCustomer = await StripePayment.createCustomer({
+        user_id: user.data.id,
+        email: email,
+        name: `${first_name} ${last_name}`,
+      });
+
+      if (stripeCustomer) {
+        await this.prisma.user.update({
+          where: {
+            id: user.data.id,
+          },
+          data: {
+            billing_id: stripeCustomer.id,
+          },
+        });
+      }
+
+      // ----------------------------------------------------
+      // create otp code
+      const token = await UcodeRepository.createToken({
+        userId: user.data.id,
+        isOtp: true,
+      });
+
+      // send otp code to email
+      await this.mailService.sendOtpCodeToEmail({
+        email: email,
+        name: `${first_name} ${last_name}`,
+        otp: token,
+      });
+
+      return {
+        success: true,
+        message: 'We have sent an OTP code to your email',
+      };
+
+      // ----------------------------------------------------
+
+      // // Generate verification token
+      // const token = await UcodeRepository.createVerificationToken({
+      //   userId: user.data.id,
+      //   email: email,
+      // });
+
+      // // Send verification email with token
+      // await this.mailService.sendVerificationLink({
+      //   email,
+      //   name: email,
+      //   token: token.token,
+      //   type: type,
+      // });
+
+      // return {
+      //   success: true,
+      //   message: 'We have sent a verification link to your email',
+      // };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  async login({ email, userId }) {
+    try {
+      const payload = { email: email, sub: userId };
+      const token = this.jwtService.sign(payload);
+      const user = await UserRepository.getUserDetails(userId);
+
+      return {
+        success: true,
+        message: 'Logged in successfully',
+        authorization: {
+          token: token,
+          type: 'bearer',
+        },
+        type: user.type,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
 
   async me(userId: string) {
     try {
@@ -215,139 +345,6 @@ export class AuthService {
       //   success: false,
       //   message: 'Email not found',
       // };
-    }
-  }
-
-  async login({ email, userId }) {
-    try {
-      const payload = { email: email, sub: userId };
-      const token = this.jwtService.sign(payload);
-      const user = await UserRepository.getUserDetails(userId);
-
-      return {
-        success: true,
-        message: 'Logged in successfully',
-        authorization: {
-          token: token,
-          type: 'bearer',
-        },
-        type: user.type,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async register({
-    name,
-    first_name,
-    last_name,
-    email,
-    password,
-    type,
-  }: {
-    name: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    type?: string;
-  }) {
-    try {
-      // Check if email already exist
-      const userEmailExist = await UserRepository.exist({
-        field: 'email',
-        value: String(email),
-      });
-
-      if (userEmailExist) {
-        return {
-          statusCode: 401,
-          message: 'Email already exist',
-        };
-      }
-
-      const user = await UserRepository.createUser({
-        name: name,
-        first_name: first_name,
-        last_name: last_name,
-        email: email,
-        password: password,
-        type: type,
-      });
-
-      if (user == null && user.success == false) {
-        return {
-          success: false,
-          message: 'Failed to create account',
-        };
-      }
-
-      // create stripe customer account
-      const stripeCustomer = await StripePayment.createCustomer({
-        user_id: user.data.id,
-        email: email,
-        name: name,
-      });
-
-      if (stripeCustomer) {
-        await this.prisma.user.update({
-          where: {
-            id: user.data.id,
-          },
-          data: {
-            billing_id: stripeCustomer.id,
-          },
-        });
-      }
-
-      // ----------------------------------------------------
-      // // create otp code
-      // const token = await UcodeRepository.createToken({
-      //   userId: user.data.id,
-      //   isOtp: true,
-      // });
-
-      // // send otp code to email
-      // await this.mailService.sendOtpCodeToEmail({
-      //   email: email,
-      //   name: name,
-      //   otp: token,
-      // });
-
-      // return {
-      //   success: true,
-      //   message: 'We have sent an OTP code to your email',
-      // };
-
-      // ----------------------------------------------------
-
-      // Generate verification token
-      const token = await UcodeRepository.createVerificationToken({
-        userId: user.data.id,
-        email: email,
-      });
-
-      // Send verification email with token
-      await this.mailService.sendVerificationLink({
-        email,
-        name: email,
-        token: token.token,
-        type: type,
-      });
-
-      return {
-        success: true,
-        message: 'We have sent a verification link to your email',
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
     }
   }
 
