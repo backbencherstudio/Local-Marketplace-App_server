@@ -27,6 +27,8 @@ export class SellerService {
         },
       });
 
+
+
       const fileUrls = [];
 
       if (files && files.length > 0) {
