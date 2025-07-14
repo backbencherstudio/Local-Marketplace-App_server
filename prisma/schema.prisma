@@ -129,6 +129,15 @@ enum ExpiresAt {
   days_30
 }
 
+enum ServiceType {
+  Services
+  Jobs
+  For_sale
+  Help
+  Gigs
+  Community
+}
+
 model Services {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -136,6 +145,8 @@ model Services {
   deleted_at DateTime?
 
   status Int? @default(1) @db.SmallInt
+
+  type   ServiceType?
 
   title        String?
   description  String?     @db.Text

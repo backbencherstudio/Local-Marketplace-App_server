@@ -1,9 +1,11 @@
-import { ExpiresAt, SalaryType } from "@prisma/client";
+import { ExpiresAt, SalaryType, ServiceType } from "@prisma/client";
 import { IsBoolean, IsOptional, IsString } from "class-validator";
 import { Transform } from "class-transformer";
 
 
 export class CreatePostDto {
+    @IsString()
+    type:ServiceType;
 
     @IsString()
     title: string;
@@ -41,11 +43,11 @@ export class CreatePostDto {
     @IsString()
     salaryType: SalaryType;
 
-  @Transform(({ value }) => value === 'true')  // Convert "true"/"false" strings to booleans
+  @Transform(({ value }) => value === 'true') 
   @IsBoolean()
   allow_chat_only: boolean;
 
-  @Transform(({ value }) => value === 'true')  // Convert "true"/"false" strings to booleans
+  @Transform(({ value }) => value === 'true')  
   @IsBoolean()
   show_chat_info: boolean;
 }
