@@ -1,15 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UploadedFiles, UseInterceptors, Req, UseGuards } from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { CreatePostDto } from './dto/create-post-dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+
 
 @Controller('seller')
 export class SellerController {
   constructor(private readonly sellerService: SellerService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post('create-post')
   @UseInterceptors(FilesInterceptor('thumbnail', 10, { 
     storage: memoryStorage(),
@@ -17,27 +22,8 @@ export class SellerController {
   async createPost(
     @Body() createPostDto: CreatePostDto,
     @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: any,
   ) {
-    return this.sellerService.createPost(createPostDto, files);
-  }
-
-  @Get()
-  findAll() {
-    return this.sellerService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.sellerService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSellerDto: UpdateSellerDto) {
-    return this.sellerService.update(+id, updateSellerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.sellerService.remove(+id);
+   return this.sellerService.createPost(createPostDto, files , req);
   }
 }
