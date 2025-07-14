@@ -138,13 +138,20 @@ enum ServiceType {
   Community
 }
 
+enum ServiceStatus {
+  pending
+  active
+  pause
+  rejected
+}
+
 model Services {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  status Int? @default(1) @db.SmallInt
+  status  ServiceStatus? @default(pending)
 
   type   ServiceType?
 
@@ -169,6 +176,9 @@ model Services {
   allow_chat_only Boolean?
   show_chat_info  Boolean?
 
+  is_accepted Boolean? @default(false)
+  rejected_at DateTime?
+  rejected_reason String?
   @@map("services")
 }
 
