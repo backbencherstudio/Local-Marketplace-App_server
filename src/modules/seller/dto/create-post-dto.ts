@@ -17,9 +17,6 @@ export class CreatePostDto {
     price: string;
 
     @IsString()
-    userId: string;
-
-    @IsString()
     tags?: string[];
 
     @IsString()
