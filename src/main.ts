@@ -52,7 +52,6 @@ async function bootstrap() {
     connection: {
       rootUrl: appConfig().storageUrl.rootUrl,
       publicUrl: appConfig().storageUrl.rootUrlPublic,
-      // aws
       awsBucket: appConfig().fileSystems.s3.bucket,
       awsAccessKeyId: appConfig().fileSystems.s3.key,
       awsSecretAccessKey: appConfig().fileSystems.s3.secret,
@@ -72,7 +71,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
-  // end swagger
 
   await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
 }

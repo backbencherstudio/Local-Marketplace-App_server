@@ -145,7 +145,7 @@ model Services {
   tags            String[]
   price           String?
   salary_range    String?
-  salary_type     SalaryType? @default(Monthly)
+  salary_type     SalaryType?
   location        String?
 
   category_id     String?
