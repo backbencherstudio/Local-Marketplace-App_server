@@ -32,10 +32,10 @@ model Account {
 }
 
 enum Suspended {
-   Until_i_Decide
-   One_Week
-   One_Month
-   Three_Months
+  Until_i_Decide
+  One_Week
+  One_Month
+  Three_Months
 }
 
 enum userType {
@@ -54,15 +54,15 @@ model User {
   approved_at  DateTime?
   availability String?
   about        String?
-  experience String[]
-  email      String? @unique
-  username   String? @unique
-  name       String? @db.VarChar(255)
-  first_name String? @db.VarChar(255)
-  last_name  String? @db.VarChar(255)
-  password   String? @db.VarChar(255)
-  domain     String? @unique
-  avatar     String?
+  experience   String[]
+  email        String?   @unique
+  username     String?   @unique
+  name         String?   @db.VarChar(255)
+  first_name   String?   @db.VarChar(255)
+  last_name    String?   @db.VarChar(255)
+  password     String?   @db.VarChar(255)
+  domain       String?   @unique
+  avatar       String?
 
   phone_number  String?
   country       String?
@@ -74,7 +74,7 @@ model User {
   date_of_birth DateTime? @db.Date
 
   //suspend 
-  suspended_at DateTime?
+  suspended_at    DateTime?
   suspended_until DateTime?
 
   // billing id. e.g. stripe customer id
@@ -100,22 +100,21 @@ model User {
   roles                Role[]
   role_users           RoleUser[]
   payment_transactions PaymentTransaction[]
+  Services             Services[]
 
   @@map("users")
-  Services Services[]
 }
 
-
-
-model Category{
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
+model Category {
+  id         String     @id @default(cuid())
+  created_at DateTime   @default(now())
+  updated_at DateTime   @default(now())
   deleted_at DateTime?
-  parent_id String?
-  title  String?
-  slug   String? @unique
-  Services Services[]
+  parent_id  String?
+  title      String?
+  slug       String?    @unique
+  Services   Services[]
+
   @@map("categories")
 }
 
@@ -125,44 +124,53 @@ enum SalaryType {
 }
 
 enum ExpiresAt {
-   days_7
-   days_14
-   days_30
+  days_7
+  days_14
+  days_30
+}
+
+enum ServiceType {
+  Services
+  Jobs
+  For_sale
+  Help
+  Gigs
+  Community
 }
 
 model Services {
-  id              String    @id @default(cuid())  
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @default(now())
-  deleted_at      DateTime?
-  
-  status          Int?      @default(1) @db.SmallInt
-  
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
 
-  title           String?
-  description     String?   @db.Text
-  thumbnail       String?
-  tags            String[]
-  price           String?
-  salary_range    String?
-  salary_type     SalaryType?
-  location        String?
+  status Int? @default(1) @db.SmallInt
 
-  category_id     String?
-  category        Category? @relation(fields: [category_id], references: [id])
+  type   ServiceType?
 
-  user_id         String?
-  user            User?     @relation(fields: [user_id], references: [id])
-  username        String?
-  
+  title        String?
+  description  String?     @db.Text
+  thumbnail    String?
+  tags         String[]
+  price        String?
+  salary_range String?
+  salary_type  SalaryType?
+  location     String?
+
+  category_id String?
+  category    Category? @relation(fields: [category_id], references: [id])
+
+  user_id  String?
+  user     User?   @relation(fields: [user_id], references: [id])
+  username String?
 
   expires_at      ExpiresAt?
+  expires_date    DateTime?
   allow_chat_only Boolean?
   show_chat_info  Boolean?
-  
+
   @@map("services")
 }
-
 
 model Ucode {
   id         String   @id @default(cuid())
