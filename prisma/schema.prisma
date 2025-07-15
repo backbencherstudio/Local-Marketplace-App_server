@@ -111,6 +111,7 @@ model Category {
   updated_at DateTime   @default(now())
   deleted_at DateTime?
   parent_id  String?
+  parent_name String?
   title      String?
   slug       String?    @unique
   Services   Services[]
