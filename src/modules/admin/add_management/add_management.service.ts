@@ -9,6 +9,8 @@ import { Category } from '@prisma/client';
 export class AddManagementService {
   constructor(private readonly prisma: PrismaService) { }
 
+
+  //category management methods
   async createCategory(createCategoryDto: CreateCategoryDto) {
     const category = await this.prisma.category.create({
       data: {
@@ -45,4 +47,43 @@ export class AddManagementService {
     const categories = await this.prisma.category.findMany();
     return categories;
   }
+
+
+  async getAllPosts() {
+    const posts = await this.prisma.services.findMany({
+     select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        category: {
+          select: {
+            parent_name: true,
+          }},
+          user:{
+            select:{
+              username: true,
+            }
+          },
+          location: true,
+          status: true,
+     }
+    });
+
+  const formattedPosts = posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      thumbnail: post.thumbnail,
+      category: post.category.parent_name,
+      username: post.user.username,
+      location: post.location,
+      status: post.status,
+    }));
+
+    return {
+      message:"All posts fetched successfully",
+      data: formattedPosts,
+    };
+  }
+
+
 }
