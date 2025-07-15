@@ -19,7 +19,7 @@ import { ApplicationModule } from './modules/application/application.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PaymentModule } from './modules/payment/payment.module';
-import { SellerModule } from './modules/seller/seller.module';
+import { CreatePostModule } from './modules/create-post/create-post.module';
 
 @Module({
   imports: [
@@ -66,7 +66,7 @@ import { SellerModule } from './modules/seller/seller.module';
     AdminModule,
     ChatModule,
     PaymentModule,
-    SellerModule,
+    CreatePostModule,
   ],
   controllers: [AppController],
   providers: [
