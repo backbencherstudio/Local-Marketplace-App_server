@@ -22,6 +22,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { CreatePostModule } from './modules/create-post/create-post.module';
 import { CommonHomeModule } from './modules/common_home/common_home.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,6 +40,9 @@ import { CommonHomeModule } from './modules/common_home/common_home.module';
       //   password: appConfig().redis.password,
       //   port: +appConfig().redis.port,
       // },
+    }),
+    BullModule.registerQueue({
+      name: 'workingQueue',
     }),
     // disabling throttling for dev
     // ThrottlerModule.forRoot([

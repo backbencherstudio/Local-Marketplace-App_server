@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAddManagementDto } from './dto/create-add_management.dto';
-import { UpdateAddManagementDto } from './dto/update-add_management.dto';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Category, ServiceStatus } from '@prisma/client';
