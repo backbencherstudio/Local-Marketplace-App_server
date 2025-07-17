@@ -4,7 +4,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll() {
     try {
@@ -18,14 +18,21 @@ export class UserService {
         select: {
           id: true,
           email: true,
-          name: true,
+          first_name: true,
+          last_name: true,
           type: true,
         },
       });
+      const usersWithFullName = users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        full_name: `${user.first_name} ${user.last_name}`,
+        type: user.type,
+      }));
 
       return {
         success: true,
-        data: users,
+        data: usersWithFullName,
       };
     } catch (error) {
       return {

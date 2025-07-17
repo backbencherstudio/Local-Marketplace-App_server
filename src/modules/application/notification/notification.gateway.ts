@@ -22,11 +22,10 @@ import Redis from 'ioredis';
 })
 export class NotificationGateway
   implements
-    OnGatewayInit,
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    OnModuleInit
-{
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnModuleInit {
   @WebSocketServer()
   server: Server;
 
@@ -36,7 +35,7 @@ export class NotificationGateway
   // Map to store connected clients
   private clients = new Map<string, string>(); // userId -> socketId
 
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   onModuleInit() {
     this.redisPubClient = new Redis({
@@ -58,11 +57,11 @@ export class NotificationGateway
   }
 
   afterInit(server: Server) {
-    console.log('Websocket server started');
+    console.log('Notification Websocket server started');
   }
 
   async handleConnection(client: Socket, ...args: any[]) {
-    // console.log('new connection!', client.id);
+    console.log('new connection!', client.id);
     const userId = client.handshake.query.userId as string; // User ID passed as query parameter
     if (userId) {
       this.clients.set(userId, client.id);
@@ -97,10 +96,10 @@ export class NotificationGateway
     const targetSocketId = this.clients.get(data.userId);
     if (targetSocketId) {
       await this.redisPubClient.publish('notification', JSON.stringify(data));
-
+      this.server.to(targetSocketId).emit('receiveNotification', data);
       // console.log(`Notification sent to user ${data.userId}`);
     } else {
-      // console.log(`User ${data.userId} not connected`);
+      console.log(`User ${data.userId} not connected`);
     }
   }
 
