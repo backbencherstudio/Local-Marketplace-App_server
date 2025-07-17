@@ -111,6 +111,7 @@ model Category {
   updated_at DateTime   @default(now())
   deleted_at DateTime?
   parent_id  String?
+  parent_name String?
   title      String?
   slug       String?    @unique
   Services   Services[]
@@ -179,6 +180,10 @@ model Services {
   is_accepted Boolean? @default(false)
   rejected_at DateTime?
   rejected_reason String?
+
+  is_paused Boolean? @default(false)
+  paused_at DateTime?
+  paused_reason String?
   @@map("services")
 }
 

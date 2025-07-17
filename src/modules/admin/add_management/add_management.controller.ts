@@ -8,6 +8,7 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 export class AddManagementController {
   constructor(private readonly addManagementService: AddManagementService) { }
 
+  // category management endpoints
   @Get()
   findAll() {
     return this.addManagementService.getAllCategories();
@@ -23,6 +24,13 @@ export class AddManagementController {
   @Post('category')
   createCategory(@Body() createCategoryDto: CreateCategoryDto) {
     return this.addManagementService.createCategory(createCategoryDto);
+  }
+
+
+  // add management endpoints
+  @Get('all-posts')
+  getAllPosts() {
+    return this.addManagementService.getAllPosts();
   }
 
 }
