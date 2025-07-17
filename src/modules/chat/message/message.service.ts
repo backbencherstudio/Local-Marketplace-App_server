@@ -15,7 +15,7 @@ export class MessageService {
   constructor(
     private prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
-  ) {}
+  ) { }
 
   async create(user_id: string, createMessageDto: CreateMessageDto) {
     try {
@@ -69,6 +69,33 @@ export class MessageService {
         },
       });
 
+      // Check if this is the first message sent to the receiver by the sender
+      const existingNotification = await this.prisma.notification.findFirst({
+        where: {
+          sender_id: user_id,
+          receiver_id: data.receiver_id,
+        },
+      });
+
+      // If no notification exists, create one
+      if (!existingNotification) {
+        const notificationEvent = await this.prisma.notificationEvent.create({
+          data: {
+            type: 'New Message',
+            text: `You have received a new message from ${user_id}`,
+          },
+        });
+
+        // Create the notification
+        await this.prisma.notification.create({
+          data: {
+            sender_id: user_id,
+            receiver_id: data.receiver_id,
+            notification_event_id: notificationEvent.id,
+          },
+        });
+      }
+
       // update conversation updated_at
       await this.prisma.conversation.update({
         where: {
@@ -79,9 +106,9 @@ export class MessageService {
         },
       });
 
-      // this.messageGateway.server
-      //   .to(this.messageGateway.clients.get(data.receiver_id))
-      //   .emit('message', { from: data.receiver_id, data: message });
+      this.messageGateway.server
+        .to(this.messageGateway.clients.get(data.receiver_id))
+        .emit('message', { from: data.receiver_id, data: message });
 
       return {
         success: true,

@@ -52,7 +52,7 @@ export class MessageGateway
   onModuleInit() {}
 
   afterInit(server: Server) {
-    console.log('Websocket server started');
+    console.log('Message Websocket server started');
   }
 
   // implement jwt token validation
@@ -96,12 +96,14 @@ export class MessageGateway
     const userId = [...this.clients.entries()].find(
       ([, socketId]) => socketId === client.id,
     )?.[0];
+
     if (userId) {
       this.clients.delete(userId);
 
       const username = [...this.activeUsers.entries()].find(
         ([, id]) => id === client.id,
       )?.[0];
+      
       if (username) {
         this.activeUsers.delete(username);
       }
