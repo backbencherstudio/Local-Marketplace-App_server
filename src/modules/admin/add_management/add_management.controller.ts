@@ -32,6 +32,11 @@ export class AddManagementController {
     return this.addManagementService.createCategory(createCategoryDto);
   }
 
+  @Delete('category/:id')
+  deleteCategory(@Param('id') id: string) {
+    return this.addManagementService.deleteCategory(id);
+  } 
+
 
   // add management endpoints
   @Get('all-posts')

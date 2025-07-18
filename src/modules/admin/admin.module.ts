@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { UserManagementModule } from './user_management/user_management.module';
 import { AddManagementModule } from './add_management/add_management.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AddManagementModule } from './add_management/add_management.module';
     NotificationModule,
     UserManagementModule,
     AddManagementModule,
+    ReportModule,
   ],
 })
 export class AdminModule {}

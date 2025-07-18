@@ -10,11 +10,28 @@ export class AddManagementService {
 
   //category management methods
   async createCategory(createCategoryDto: CreateCategoryDto) {
+
+    const existingCategory = await this.prisma.category.findUnique({
+      where: { id: createCategoryDto.parent_id },
+      select: { id: true , title: true},
+    });
+    if (!existingCategory) {
+      return {
+        message: 'Parent category not found', 
+    }   };
+    
+    if (existingCategory.title !== null || existingCategory.title !== undefined) {
+      return {
+        message: 'This is not a parent category, you cannot create a subcategory under it',
+      };
+
+    }
     const category = await this.prisma.category.create({
       data: {
         title: createCategoryDto.title,
         slug: createCategoryDto.slug,
-        parent_id: createCategoryDto.parent_id,
+        parent_id: existingCategory.id,
+        parent_name: existingCategory.title,
       },
     });
     return category;
