@@ -166,6 +166,7 @@ export class CreatePostService {
           is_accepted: true,
           rejected_at: true,
           rejected_reason: true,
+          is_reported: true,
           user: {
             select: {
               id: true,
@@ -201,6 +202,7 @@ export class CreatePostService {
         post_status: post.status,
         created_at: post.created_at,
         is_accepted: post.is_accepted,
+        is_reported: post.is_reported,
         rejected_at: post.rejected_at,
         rejected_reason: post.rejected_reason,
         user_id: post.user.id,
