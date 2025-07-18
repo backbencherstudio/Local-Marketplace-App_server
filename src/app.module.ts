@@ -21,6 +21,9 @@ import { ChatModule } from './modules/chat/chat.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { CreatePostModule } from './modules/create-post/create-post.module';
 import { CommonHomeModule } from './modules/common_home/common_home.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SchedulerService } from './SchedulerService';
+
 
 @Module({
   imports: [
@@ -39,6 +42,10 @@ import { CommonHomeModule } from './modules/common_home/common_home.module';
       //   password: appConfig().redis.password,
       //   port: +appConfig().redis.port,
       // },
+    }),
+    ScheduleModule.forRoot(),
+    BullModule.registerQueue({
+      name: 'workingQueue',
     }),
     // disabling throttling for dev
     // ThrottlerModule.forRoot([
@@ -81,7 +88,7 @@ import { CommonHomeModule } from './modules/common_home/common_home.module';
     //   provide: APP_GUARD,
     //   useClass: ThrottlerBehindProxyGuard,
     // },
-    AppService,
+    AppService,SchedulerService
   ],
 })
 export class AppModule {
