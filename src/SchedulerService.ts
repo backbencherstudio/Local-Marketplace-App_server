@@ -54,36 +54,27 @@ async handleHourlyCron() {
 async handlePostUpdate() {
   const now = new Date();  
   console.log('Cron executed at:', now);
-  
-  const usersToUpdate = await this.prisma.services.findMany({
-    where: {
+   const updatePostsStatus = await this.prisma.services.findMany({
+    where:{
+      status:'active',
+      is_accepted: true,
       expires_date: {
         lte: now,
-      }
-    },
-    select: {
-      id: true,
-      user_id: true,
-      status: true,
-      expires_at: true,
-    },
-  });
-  
-  for (const service of usersToUpdate) {
-    await this.prisma.user.update({
-      where: { id: service.user_id },
+      },
+    }
+   })
+
+  for (const post of updatePostsStatus) {
+    await this.prisma.services.update({
+      where: { id: post.id },
       data: {
-        suspended_at: null,  
-        suspended_until: null,
+        status: "active",
       },
     });
 
-    await this.prisma.services.updateMany({
-      where: { id: service.id },
-      data: undefined
-    });
+    console.log(`Post ${post.id} has been updated to expired.`);
 
-    console.log(`User ${service.user_id} has been unsuspended and their service deleted.`);
+
   }
 }
 
@@ -102,4 +93,4 @@ async handlePostUpdate() {
   //   handleTimeout() {
   //     console.log('Timeout job executed after 10 seconds!');
   //   }
-}
+
