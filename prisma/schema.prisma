@@ -101,9 +101,9 @@ model User {
   role_users           RoleUser[]
   payment_transactions PaymentTransaction[]
   Services             Services[]
+  Report               Report[]
 
   @@map("users")
-  Report Report[]
 }
 
 model Category {
@@ -188,10 +188,11 @@ model Services {
   paused_at     DateTime?
   paused_reason String?
 
-  is_reported Int? @default(0) // why // why
+  is_reported Int?      @default(0) // why // why
   reported_at DateTime?
+  Report      Report[]
+
   @@map("services")
-  Report Report[]
 }
 
 model Ucode {
@@ -372,19 +373,18 @@ enum ConversationType {
 
 // this table stores conversation
 model Conversation {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  creator_id String?
-  creator    User?   @relation("creator", fields: [creator_id], references: [id])
-
+  id             String  @id @default(cuid())
+  creator_id     String?
+  creator        User?   @relation("creator", fields: [creator_id], references: [id])
   participant_id String?
   participant    User?   @relation("participant", fields: [participant_id], references: [id])
 
   type     ConversationType?
   messages Message[]
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
 
   @@map("conversations")
 }
@@ -554,17 +554,16 @@ model UserSetting {
 //   @@map("posts")
 // }
 
-
 //Report model 
 
-
-model ReportType{
+model ReportType {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
-  name String?
-  reports Report[]
+  name       String?
+  reports    Report[]
+
   @@map("report_types")
 }
 
@@ -573,8 +572,9 @@ model ReportCategory {
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
-  name String?
-  reports Report[]
+  name       String?
+  reports    Report[]
+
   @@map("report_categories")
 }
 
@@ -588,13 +588,13 @@ model Report {
   user    User?   @relation(fields: [user_id], references: [id])
 
   service_id String?
-  service   Services? @relation(fields: [service_id], references: [id])
+  service    Services? @relation(fields: [service_id], references: [id])
 
-  reason String?
-  report_type String?
+  reason          String?
+  report_type     String?
   report_category String?
+  ReportType      ReportType[]
+  ReportCategory  ReportCategory[]
 
   @@map("reports")
-  ReportType ReportType[]
-  ReportCategory ReportCategory[]
 }

@@ -13,7 +13,7 @@ export class ConversationService {
   constructor(
     private prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
-  ) {}
+  ) { }
 
   async create(createConversationDto: CreateConversationDto) {
     try {
@@ -24,6 +24,9 @@ export class ConversationService {
       }
       if (createConversationDto.participant_id) {
         data.participant_id = createConversationDto.participant_id;
+      }
+      if (createConversationDto.type) {
+        data.type = createConversationDto.type;
       }
 
       // check if conversation exists
@@ -48,6 +51,7 @@ export class ConversationService {
               avatar: true,
             },
           },
+          type: true,
           messages: {
             orderBy: {
               created_at: 'desc',
@@ -61,8 +65,24 @@ export class ConversationService {
           },
         },
         where: {
-          creator_id: data.creator_id,
-          participant_id: data.participant_id,
+          // Check if the conversation exists with matching creator_id or participant_id
+          AND: [
+            {
+              OR: [
+                {
+                  creator_id: data.creator_id,
+                  participant_id: data.participant_id,
+                },
+                {
+                  creator_id: data.participant_id,
+                  participant_id: data.creator_id,
+                },
+              ],
+            },
+            {
+              type: createConversationDto.type, // Ensure the conversation type matches the type provided in DTO
+            },
+          ],
         },
       });
 
@@ -95,6 +115,7 @@ export class ConversationService {
               avatar: true,
             },
           },
+          type: true,
           messages: {
             orderBy: {
               created_at: 'desc',
@@ -138,6 +159,80 @@ export class ConversationService {
         success: true,
         message: 'Conversation created successfully',
         data: conversation,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // find all conversation for a specific user
+  async findAllByUserId(userId: string) {
+    try {
+      const conversations = await this.prisma.conversation.findMany({
+        where: {
+          OR: [
+            { creator_id: userId },
+            { participant_id: userId },
+          ],
+        },
+        orderBy: {
+          updated_at: 'desc', // Order by the most recent updated conversation
+        },
+        select: {
+          id: true,
+          creator_id: true,
+          participant_id: true,
+          created_at: true,
+          updated_at: true,
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          participant: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          type: true,
+          messages: {
+            orderBy: {
+              created_at: 'desc',
+            },
+            take: 1,
+            select: {
+              id: true,
+              message: true,
+              created_at: true,
+            },
+          },
+        },
+      });
+
+      // Add image URLs for avatars
+      for (const conversation of conversations) {
+        if (conversation.creator.avatar) {
+          conversation.creator['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + conversation.creator.avatar,
+          );
+        }
+        if (conversation.participant.avatar) {
+          conversation.participant['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + conversation.participant.avatar,
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data: conversations,
       };
     } catch (error) {
       return {
