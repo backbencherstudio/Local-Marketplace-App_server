@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>All-in-One Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #4361ee;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .section-header h4 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #4361ee;
+        }
+
+        #chat {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e7ff;
+            border-radius: 12px;
+            padding: 15px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message {
+            padding: 10px 14px;
+            border-radius: 8px;
+            line-height: 1.4;
+            font-size: 14px;
+            max-width: 80%;
+            position: relative;
+        }
+
+        .self {
+            background: #e0e7ff;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .other {
+            background: white;
+            border: 1px solid #e0e7ff;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        .message-info {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .message-info .badge {
+            background: #4361ee;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #212529;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e7ff;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #4361ee;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #3f37c9;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h2><i class="fas fa-comments"></i> One Chat</h2>
+            <div class="subtitle">Connect with app user through chats</div>
+        </div>
+
+        <!-- User ID section -->
+        <div class="section">
+            <div class="form-group">
+                <label for="senderId">Sender ID</label>
+                <input type="text" id="senderId" placeholder="Enter your unique sender ID" />
+            </div>
+            <div class="form-group">
+                <label for="receiverId">Receiver ID</label>
+                <input type="text" id="receiverId" placeholder="Enter the receiver's unique ID" />
+            </div>
+            <div class="form-group">
+                <label for="token">JWT Token</label>
+                <input type="text" id="token" placeholder="Enter JWT token" />
+            </div>
+            <button id="connectBtn"
+                class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-1 px-6 rounded-lg shadow-md transition duration-200">
+                Connect
+            </button>
+
+        </div>
+
+        <!-- Chat output area -->
+        <div class="section">
+            <div class="section-header">
+                <h4>Chat Messages</h4>
+            </div>
+            <div id="chat"></div>
+        </div>
+
+        <!-- Message input section -->
+        <div class="section">
+            <div class="form-group">
+                <label for="messageInput">Enter Message</label>
+                <input type="text" id="messageInput" placeholder="Type your message here..." />
+            </div>
+            <button id="sendMessageBtn"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-6 rounded-lg shadow-md transition duration-200">Send
+                Message</button>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        const chatBox = document.getElementById('chat');
+        const tokenInput = document.getElementById('token');
+        const connectBtn = document.getElementById('connectBtn');
+        const senderIdInput = document.getElementById('senderId');
+        const messageInput = document.getElementById('messageInput');
+        const receiverIdInput = document.getElementById('receiverId');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+
+        // Handle Connect button click
+        connectBtn.addEventListener('click', () => {
+            const token = tokenInput.value;
+            const senderId = senderIdInput.value;
+            const receiverId = receiverIdInput.value;
+
+            if (token && senderId && receiverId) {
+                socket = io('http://localhost:4001', {
+                    auth: { token: token },
+                });
+
+                // On successful connection
+                socket.on('connect', () => {
+                    console.log('Connected to the server');
+                });
+
+                // Handle receiving messages
+                socket.on('message', (data) => {
+                    displayMessage(data);
+                });
+            } else {
+                alert('Please fill in all fields');
+            }
+        });
+
+        // Send message on button click
+        sendMessageBtn.addEventListener('click', () => {
+            const senderId = senderIdInput.value;
+            const receiverId = receiverIdInput.value;
+            const message = messageInput.value;
+
+            if (message && senderId && receiverId && socket) {
+                socket.emit('sendMessage', {
+                    to: receiverId,
+                    data: {
+                        sender: { id: senderId },
+                        message: message,
+                    },
+                });
+
+                messageInput.value = ''; // Clear the input field
+            } else {
+                alert('Please ensure you are connected and fill in the message');
+            }
+        });
+
+        // Function to display message in the chat box
+        function displayMessage(data) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.from === receiverIdInput.value ? 'self' : 'other');
+            messageElement.innerHTML = `<strong>${data.from}:</strong> ${data.data.message}`;
+
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Auto scroll to the latest message
+        }
+    </script>
+</body>
+
+</html>
