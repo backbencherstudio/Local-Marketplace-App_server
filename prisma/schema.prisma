@@ -185,6 +185,9 @@ model Services {
   is_paused     Boolean?  @default(false)
   paused_at     DateTime?
   paused_reason String?
+
+  is_reported Int? @default(0) // why // why
+  reported_at DateTime?
   @@map("services")
   Report Report[]
 }
