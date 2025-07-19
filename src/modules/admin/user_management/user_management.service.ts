@@ -163,7 +163,9 @@ export class UserManagementService {
         break;
       case Suspended.Three_Months:
         suspendedUntil = new Date(currentDate);
-        suspendedUntil.setMonth(suspendedUntil.getMonth() + 3);
+// Assuming suspendedUntil is a Date object
+suspendedUntil.setMinutes(suspendedUntil.getMinutes() + 5);
+
         break;
     }
     const userExists = await this.prisma.user.findUnique({
