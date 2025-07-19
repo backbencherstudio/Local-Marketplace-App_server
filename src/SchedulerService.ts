@@ -15,6 +15,9 @@ export class SchedulerService {
   //   console.log('Heyyyyyyy', ++this.count, 'Scheduler executed!');
   // }
 
+
+  // This cron job runs every hour
+  // It checks for users whose suspended_until date is less than or equal to the current date
 @Cron(CronExpression.EVERY_10_MINUTES) 
 async handleHourlyCron() {
   const now = new Date();  
@@ -50,56 +53,37 @@ async handleHourlyCron() {
   }
 }
 
-@Cron(CronExpression.EVERY_10_MINUTES)
+
+//update posts status to expired if the post is active and accepted and the expires date is less than or equal to now
+// This cron job runs every 10 seconds
+@Cron(CronExpression.EVERY_10_SECONDS)
 async handlePostUpdate() {
   const now = new Date();  
   console.log('Cron executed at:', now);
-  
-  const usersToUpdate = await this.prisma.services.findMany({
-    where: {
+   const updatePostsStatus = await this.prisma.services.findMany({
+    where:{
+      status:'active',
+      is_accepted: true,
       expires_date: {
         lte: now,
-      }
-    },
-    select: {
-      id: true,
-      user_id: true,
-      status: true,
-      expires_at: true,
-    },
-  });
-  
-  for (const service of usersToUpdate) {
-    await this.prisma.user.update({
-      where: { id: service.user_id },
+      },
+    }
+   })
+
+  for (const post of updatePostsStatus) {
+    await this.prisma.services.update({
+      where: { id: post.id },
       data: {
-        suspended_at: null,  
-        suspended_until: null,
+        status: "expired",
+
       },
     });
 
-    await this.prisma.services.updateMany({
-      where: { id: service.id },
-      data: undefined
-    });
+    console.log(`Post ${post.id} has been updated to expired.`);
 
-    console.log(`User ${service.user_id} has been unsuspended and their service deleted.`);
+
   }
 }
 
 
-
-  // Uncomment the following methods if you want to use them
-
-
-  //   @Interval(5000) 
-  //   handleInterval() {
-  //     console.log('Interval job executed every 5 seconds!');
-  //   }
-
-
-  //   @Timeout(10000)
-  //   handleTimeout() {
-  //     console.log('Timeout job executed after 10 seconds!');
-  //   }
 }
