@@ -103,6 +103,7 @@ model User {
   Services             Services[]
 
   @@map("users")
+  Report Report[]
 }
 
 model Category {
@@ -184,8 +185,8 @@ model Services {
   is_paused     Boolean?  @default(false)
   paused_at     DateTime?
   paused_reason String?
-
   @@map("services")
+  Report Report[]
 }
 
 model Ucode {
@@ -547,3 +548,48 @@ model UserSetting {
 //   tenant    Organization? @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 //   @@map("posts")
 // }
+
+
+//Report model 
+
+
+model ReportType{
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+  name String?
+  reports Report[]
+  @@map("report_types")
+}
+
+model ReportCategory {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+  name String?
+  reports Report[]
+  @@map("report_categories")
+}
+
+model Report {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  service_id String?
+  service   Services? @relation(fields: [service_id], references: [id])
+
+  reason String?
+  report_type String?
+  report_category String?
+
+  @@map("reports")
+  ReportType ReportType[]
+  ReportCategory ReportCategory[]
+}

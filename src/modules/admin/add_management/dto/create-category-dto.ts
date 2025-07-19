@@ -9,7 +9,7 @@ export class CreateCategoryDto {
   slug: string;
 
 
-  @IsOptional()
+
   @IsString()
   parent_id?: string;
 }
