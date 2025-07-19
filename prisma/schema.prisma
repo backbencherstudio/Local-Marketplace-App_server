@@ -107,15 +107,15 @@ model User {
 }
 
 model Category {
-  id         String     @id @default(cuid())
-  created_at DateTime   @default(now())
-  updated_at DateTime   @default(now())
-  deleted_at DateTime?
-  parent_id  String?
+  id          String     @id @default(cuid())
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now())
+  deleted_at  DateTime?
+  parent_id   String?
   parent_name String?
-  title      String?
-  slug       String?    @unique
-  Services   Services[]
+  title       String?
+  slug        String?    @unique
+  Services    Services[]
 
   @@map("categories")
 }
@@ -153,9 +153,9 @@ model Services {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  status  ServiceStatus? @default(pending)
+  status ServiceStatus? @default(pending)
 
-  type   ServiceType?
+  type ServiceType?
 
   title        String?
   description  String?     @db.Text
@@ -178,12 +178,12 @@ model Services {
   allow_chat_only Boolean?
   show_chat_info  Boolean?
 
-  is_accepted Boolean? @default(false)
-  rejected_at DateTime?
+  is_accepted     Boolean?  @default(false)
+  rejected_at     DateTime?
   rejected_reason String?
 
-  is_paused Boolean? @default(false)
-  paused_at DateTime?
+  is_paused     Boolean?  @default(false)
+  paused_at     DateTime?
   paused_reason String?
 
   is_reported Int? @default(0) // why // why
@@ -358,6 +358,35 @@ model PaymentTransaction {
 
 // ---------Start Chat schema---------
 
+enum ConversationType {
+  Profile
+  Services
+  Jobs
+  For_sale
+  Help
+  Gigs
+  Community
+}
+
+// this table stores conversation
+model Conversation {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  creator_id String?
+  creator    User?   @relation("creator", fields: [creator_id], references: [id])
+
+  participant_id String?
+  participant    User?   @relation("participant", fields: [participant_id], references: [id])
+
+  type     ConversationType?
+  messages Message[]
+
+  @@map("conversations")
+}
+
 enum MessageStatus {
   PENDING
   SENT
@@ -407,24 +436,6 @@ model Attachment {
   messages Message[]
 
   @@map("attachments")
-}
-
-// this table stores conversation
-model Conversation {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
-  creator_id String?
-  creator    User?   @relation("creator", fields: [creator_id], references: [id])
-
-  participant_id String?
-  participant    User?   @relation("participant", fields: [participant_id], references: [id])
-
-  messages Message[]
-
-  @@map("conversations")
 }
 
 // ---------End Chat schema---------

@@ -20,15 +20,13 @@ import { Roles } from 'src/common/guard/role/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('chat/conversation')
 export class ConversationController {
-  constructor(private readonly conversationService: ConversationService) {}
+  constructor(private readonly conversationService: ConversationService) { }
 
   @ApiOperation({ summary: 'Create conversation' })
   @Post()
   async create(@Body() createConversationDto: CreateConversationDto) {
     try {
-      const conversation = await this.conversationService.create(
-        createConversationDto,
-      );
+      const conversation = await this.conversationService.create(createConversationDto);
       return conversation;
     } catch (error) {
       return {
