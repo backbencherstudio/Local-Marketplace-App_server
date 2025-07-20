@@ -167,6 +167,8 @@ export class AuthService {
           type: true,
           gender: true,
           date_of_birth: true,
+          experience: true,
+          about: true,
           created_at: true,
         },
       });
@@ -245,6 +247,12 @@ export class AuthService {
       }
       if (updateUserDto.date_of_birth) {
         data.date_of_birth = DateHelper.format(updateUserDto.date_of_birth);
+      }
+      if (updateUserDto.about) {
+        data.about = updateUserDto.about;
+      }
+      if (updateUserDto.experience) {
+        data.experience = updateUserDto.experience;
       }
       if (image) {
         // delete old image from storage
