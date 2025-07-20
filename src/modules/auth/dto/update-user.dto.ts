@@ -1,6 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
-import { IsOptional } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
@@ -65,4 +65,22 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     example: '14/11/2001',
   })
   date_of_birth?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'User bio',
+    example: 'Software developer with a passion for open-source',
+  })
+  about?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'User experience array',
+    example: ['5 years as a backend developer', '2 years as a product manager'],
+    type: [String],
+  })
+  experience?: string[];
+
 }
