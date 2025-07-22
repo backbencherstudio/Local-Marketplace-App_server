@@ -78,4 +78,24 @@ export class MailService {
       console.log(error);
     }
   }
+
+  async userSuspendedNotification(user: { email: string; name: string }) {
+    try {
+      const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
+      const subject = 'Account Suspended';
+
+      // add to queue
+      await this.queue.add('userSuspendedNotification', {
+        to: user.email,
+        from: from,
+        subject: subject,
+        template: 'account-suspended',
+        context: {
+          name: user.name,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }

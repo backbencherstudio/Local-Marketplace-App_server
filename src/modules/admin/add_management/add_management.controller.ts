@@ -83,7 +83,7 @@ export class AddManagementController {
     return this.addManagementService.approvePost(id, req);
   }
 
-  @Patch('pause/:id')
+  @Patch('reject/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
 
