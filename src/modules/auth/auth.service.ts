@@ -1,5 +1,5 @@
 // external imports
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 //internal imports
 import appConfig from '../../config/app.config';
@@ -393,6 +393,90 @@ export class AuthService {
     }
   }
 
+  async validateOTP({ email, token }) {
+    try {
+      const user = await UserRepository.exist({
+        field: 'email',
+        value: email,
+      });
+
+      if (user) {
+        const existToken = await UcodeRepository.validateToken({
+          email: email,
+          token: token,
+        });
+
+        if (existToken) {
+          // delete otp code
+          await UcodeRepository.deleteToken({
+            email: email,
+            token: token,
+          });
+          const jwtPayload = { email };
+
+          const otpToken = this.jwtService.sign(jwtPayload);
+
+          return {
+            success: true,
+            message: 'OTP validated successfully',
+            token: otpToken,
+          };
+
+        } else {
+          return {
+            success: false,
+            message: 'Invalid or Expire token',
+          };
+        }
+      } else {
+        return {
+          success: false,
+          message: 'Email not found',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // Reset password using the token
+  async resetPasswordWithToken({ token, password }) {
+    try {
+      // Verify the JWT token to get the email
+      const decoded: any = this.jwtService.verifyAsync(token, {
+        secret: appConfig().jwt.secret, // Secret key for verification
+        ignoreExpiration: false, // Explicitly set to false to ensure expiration is checked
+      });
+      const email = decoded.email;
+      // console.log(email);
+
+      // Check if the user exists
+      const user = await UserRepository.exist({
+        field: 'email',
+        value: email,
+      });
+
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      await UserRepository.changePassword({
+        email: email,
+        password: password,
+      });
+
+      return {
+        success: true,
+        message: 'Password reset successfully',
+      };
+    } catch (error) {
+      throw new HttpException('Invalid or expired token', HttpStatus.UNAUTHORIZED);
+    }
+  }
+
   async resetPassword({ email, token, password }) {
     try {
       const user = await UserRepository.exist({
@@ -466,10 +550,10 @@ export class AuthService {
           });
 
           // delete otp code
-          // await UcodeRepository.deleteToken({
-          //   email: email,
-          //   token: token,
-          // });
+          await UcodeRepository.deleteToken({
+            email: email,
+            token: token,
+          });
 
           return {
             success: true,
@@ -649,6 +733,40 @@ export class AuthService {
         return {
           success: false,
           message: 'User not found',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  async disabledAccount({ email }) {
+    try {
+      const user = await UserRepository.exist({
+        field: 'email',
+        value: email,
+      });
+      if (user) {
+        await this.prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            email_verified_at: null,
+          },
+        });
+
+        return {
+          success: true,
+          message: 'Account Dissabled Successfully',
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Email not found',
         };
       }
     } catch (error) {

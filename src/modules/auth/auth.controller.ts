@@ -23,6 +23,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import appConfig from '../../config/app.config';
 import { AuthGuard } from '@nestjs/passport';
+import { Roles } from 'src/common/guard/role/roles.decorator';
+import { Role } from 'src/common/guard/role/role.enum';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -237,6 +239,62 @@ export class AuthController {
     }
   }
 
+  // validate OTP
+  @ApiOperation({ summary: 'Reset password' })
+  @Post('validate-otp')
+  async validateOtp(@Body() data: { email: string; token: string }) {
+    try {
+      const email = data.email;
+      const token = data.token;
+      if (!email) {
+        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      }
+      if (!token) {
+        throw new HttpException('Token not provided', HttpStatus.UNAUTHORIZED);
+      }
+      return await this.authService.validateOTP({
+        email: email,
+        token: token,
+      });
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Something went wrong',
+      };
+    }
+  }
+
+  // set password with token
+  @ApiOperation({ summary: 'Reset password' })
+  @Post('reset-token-password')
+  async resetPasswordWithToken(
+    @Body() data: { token: string; password: string },
+  ) {
+    try {
+      const token = data.token;
+      const password = data.password;
+      if (!token) {
+        throw new HttpException('Token not provided', HttpStatus.UNAUTHORIZED);
+      }
+      if (!password) {
+        throw new HttpException(
+          'Password not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      return await this.authService.resetPasswordWithToken({
+        token: token,
+        password: password,
+      });
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+
   // reset password if user forget the password
   @ApiOperation({ summary: 'Reset password' })
   @Post('reset-password')
@@ -373,6 +431,25 @@ export class AuthController {
       };
     }
   }
+
+  // change password if user want to change the password
+  @ApiOperation({ summary: 'Disabled account' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.BUYER, Role.SELLER)
+  @Post('disabled-account')
+  async disabledAccount(@Req() req: Request) {
+    try {
+      const email = req.user.email;
+      return await this.authService.disabledAccount({ email });
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to change password',
+      };
+    }
+  }
+
   // -------end change email address------
 
   // --------- 2FA ---------
