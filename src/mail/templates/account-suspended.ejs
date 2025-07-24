@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Account Suspended</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #e0e0e0; padding: 32px; }
+        h2 { color: #d32f2f; }
+        p { color: #333; line-height: 1.6; }
+        .footer { margin-top: 32px; font-size: 13px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Account Suspended</h2>
+        <p>Dear <%= userName %>,</p>
+        <p>
+            We regret to inform you that your account on <strong>Local Marketplace</strong> has been suspended due to a violation of our terms of service.
+        </p>
+        <p>
+            If you believe this is a mistake or would like more information, please contact our support team at <a href="mailto:support@localmarketplace.com">support@localmarketplace.com</a>.
+        </p>
+        <p>
+            Thank you for your understanding.<br>
+            <strong>The Local Marketplace Team</strong>
+        </p>
+        <div class="footer">
+            &copy; <%= new Date().getFullYear() %> Local Marketplace. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

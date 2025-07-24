@@ -377,7 +377,7 @@ export class AddManagementService {
 
     return {
       success: true,
-      message: 'Post has been paused successfully',
+      message: 'Post has been rejected successfully',
       data: updatedPost,
     };
   }

@@ -12,13 +12,14 @@ import { SojebStorage } from '../../common/lib/Disk/SojebStorage';
 import { DateHelper } from '../../common/helper/date.helper';
 import { StripePayment } from '../../common/lib/Payment/stripe/StripePayment';
 import { StringHelper } from '../../common/helper/string.helper';
-
+import { FirebaseService } from '../firebase/firebase.service';
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
     private mailService: MailService,
+    private firebaseService: FirebaseService,
   ) { }
 
   async register({
@@ -94,6 +95,24 @@ export class AuthService {
         name: `${first_name} ${last_name}`,
         otp: token,
       });
+
+      const userToken = await this.getUserDeviceToken(user.data.id);  // Get user device token
+      const adminToken = await this.getAdminDeviceToken();            // Get admin device token
+
+      if (userToken) {
+        await this.firebaseService.sendNotification(
+          userToken,
+          'Welcome to Local Marketplace!',
+          `Hi ${first_name} ${last_name}, your account has been created.`
+        );
+      }
+      if (adminToken) {
+        await this.firebaseService.sendNotification(
+          adminToken,
+          'New User Registered',
+          `${first_name} ${last_name} has registered.`
+        );
+      }
 
       return {
         success: true,
@@ -730,4 +749,24 @@ export class AuthService {
     }
   }
   // --------- end 2FA ---------
+
+async getUserDeviceToken(userId: string): Promise<string | null> {
+  // Fetch the user by their ID
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId }, // Assuming `id` is the primary identifier for the user
+  });
+
+  // Return the user's device token if it exists, otherwise return null
+  return user?.device_token ?? null;
+}
+  // Add getAdminDeviceToken method if needed
+async getAdminDeviceToken(): Promise<string | null> {
+  // Fetch the first admin from the database
+  const admin = await this.prisma.user.findFirst({
+    where: { type: 'admin' }, // Assuming the admin's role is 'admin'
+  });
+
+  // Return the admin's device token if it exists, otherwise return null
+  return admin?.device_token ?? null;
+}
 }

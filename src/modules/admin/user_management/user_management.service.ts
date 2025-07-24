@@ -4,15 +4,14 @@ import { UpdateUserManagementDto } from './dto/update-user_management.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { map } from 'rxjs';
 import { Suspended } from '@prisma/client';
-
+import { MailService } from 'src/mail/mail.service';
 @Injectable()
 export class UserManagementService {
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService, private mailService: MailService) { }
   create(createUserManagementDto: CreateUserManagementDto) {
     return 'This action adds a new userManagement';
   }
-
   async findAllUsers(userType?: string, status?: number, country?: string, state?: string, city?: string) {
     const filterCondition: any = {};
 
@@ -34,6 +33,8 @@ export class UserManagementService {
       filterCondition.city = city;
     }
 
+  
+    filterCondition.type = { not: 'admin' };
     const users = await this.prisma.user.findMany({
       where: filterCondition,
       select: {
@@ -54,6 +55,7 @@ export class UserManagementService {
         type: true,
       },
     });
+    
 
     if (users.length === 0) {
       let noUsersMessage = 'No users found';
@@ -61,6 +63,10 @@ export class UserManagementService {
         noUsersMessage = 'No sellers found';
       } else if (userType === 'Buyer') {
         noUsersMessage = 'No buyers found';
+      }
+
+      if (users) {
+        
       }
 
       return {
@@ -187,12 +193,26 @@ suspendedUntil.setMinutes(suspendedUntil.getMinutes() + 5);
       },
     });
 
+    await this.prisma.services.updateMany({
+      where: { user_id: id },
+      data: {
+        status: 'pause',
+        is_paused: true,
+        paused_reason: 'As the user is suspended, all their services are paused.',
+      },
+    });
+
     if (!user) {
       return {
         message: "User not found",
         data: null,
       };
     }
+
+    await this.mailService.userSuspendedNotification({
+      email: user.email,
+      name: user.name || 'User',
+    });
 
     return {
       message: "User suspended successfully",
@@ -221,6 +241,15 @@ suspendedUntil.setMinutes(suspendedUntil.getMinutes() + 5);
       },
     });
 
+    await this.prisma.services.updateMany({
+      where: { user_id: id },
+      data: {
+        status: 'active',
+        is_paused: false,
+        paused_reason: null,
+      },
+    });
+
     if (!user) {
       return {
         message: "User not found",
@@ -244,3 +273,4 @@ suspendedUntil.setMinutes(suspendedUntil.getMinutes() + 5);
     };
   }
 }
+

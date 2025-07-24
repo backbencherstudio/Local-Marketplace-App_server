@@ -55,3 +55,11 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+#firebase -secret
+/firebase-secret
+firebase-secret.json
+# Firebase
+firebase-debug.log
+# Firebase Emulator
+firebase-emulator-ui.log

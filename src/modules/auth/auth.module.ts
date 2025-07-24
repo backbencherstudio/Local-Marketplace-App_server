@@ -9,6 +9,8 @@ import appConfig from '../../config/app.config';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { MailModule } from '../../mail/mail.module';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { FirebaseModule } from '../firebase/firebase.module';
+
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
     PrismaModule,
     MailModule,
+    FirebaseModule, // Import FirebaseModule to use FirebaseService
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy],
