@@ -23,6 +23,8 @@ import { CreatePostModule } from './modules/create-post/create-post.module';
 import { CommonHomeModule } from './modules/common_home/common_home.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerService } from './SchedulerService';
+import { FirebaseModule } from './modules/firebase/firebase.module';
+import { FirebaseService } from './modules/firebase/firebase.service';
 
 
 @Module({
@@ -76,6 +78,7 @@ import { SchedulerService } from './SchedulerService';
     PaymentModule,
     CreatePostModule,
     CommonHomeModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [
@@ -88,7 +91,7 @@ import { SchedulerService } from './SchedulerService';
     //   provide: APP_GUARD,
     //   useClass: ThrottlerBehindProxyGuard,
     // },
-    AppService,SchedulerService
+    AppService,SchedulerService ,FirebaseService
   ],
 })
 export class AppModule {

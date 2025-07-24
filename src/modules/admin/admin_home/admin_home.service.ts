@@ -91,58 +91,57 @@ export class AdminHomeService {
       popularCategories: popularCategories,
     };
   }
- async getPopularPosts() {
-  // 1. Get top 3 most-used categories
-  const topCategories = await this.prisma.services.groupBy({
-    by: ['category_id'],
-    _count: {
-      category_id: true,
-    },
-    orderBy: {
+  async getPopularPosts() {
+    // 1. Get top 3 most-used categories
+    const topCategories = await this.prisma.services.groupBy({
+      by: ['category_id'],
       _count: {
-        category_id: 'desc',
+        category_id: true,
       },
-    },
-    take: 3,
-  });
-
-  const topCategoryIds = topCategories.map((c) => c.category_id);
-
-  // 2. Get posts from those top categories
-  const popularPosts = await this.prisma.services.findMany({
-    where: {
-      category_id: {
-        in: topCategoryIds,
-      },
-    },
-    select: {
-      id: true,
-      title: true,
-      thumbnail: true,
-      category: {
-        select: {
-          parent_name: true,
+      orderBy: {
+        _count: {
+          category_id: 'desc',
         },
       },
-      user: {
-        select: {
-          username: true,
+      take: 3,
+    });
+
+    const topCategoryIds = topCategories.map((c) => c.category_id);
+
+    // 2. Get posts from those top categories
+    const popularPosts = await this.prisma.services.findMany({
+      where: {
+        category_id: {
+          in: topCategoryIds,
         },
       },
-      location: true,
-    },
-    orderBy: {
-      created_at: 'desc',
-    },
-    take: 5,
-  });
+      select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        category: {
+          select: {
+            parent_name: true,
+          },
+        },
+        user: {
+          select: {
+            username: true,
+          },
+        },
+        location: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      take: 5,
+    });
 
-  return {
-    message: 'Popular posts based on trending categories fetched successfully',
-    popularPosts,
-  };
-}
-
+    return {
+      message: 'Popular posts based on trending categories fetched successfully',
+      popularPosts,
+    };
+  }
   async getpopularLocations() {
     const popularLocations = await this.prisma.services.groupBy({
       by: ['location'],

@@ -63,7 +63,8 @@ model User {
   password     String?   @db.VarChar(255)
   domain       String?   @unique
   avatar       String?
-
+  device_token String? // for push notification
+  device_type  String? // e.g. android, ios, web
   phone_number  String?
   country       String?
   state         String?
