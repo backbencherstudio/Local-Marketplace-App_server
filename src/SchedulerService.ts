@@ -10,7 +10,7 @@ export class SchedulerService {
   // This cron job runs every hour
   // It checks for users whose suspended_until date is less than or equal to the current date
   @Cron(CronExpression.EVERY_10_MINUTES)
-  async handleSuspendeduserToUnseuspend() {
+  async handleHourlyCron() {
     const now = new Date();
     console.log('Hourly Cron executed at:', now);
 
@@ -30,43 +30,36 @@ export class SchedulerService {
       },
     });
 
-    for (const user of usersToUpdate) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          suspended_at: null,
-          suspended_until: null,
-          status: 1,
-        },
-      });
+  for (const user of usersToUpdate) {
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        suspended_at: null, 
+        suspended_until: null,
+        status: 1,
+      },
+    });
 
-      await this.prisma.services.updateMany({
-        where: { user_id: user.id },
-        data: {
-          status: 'active',
-        },
-      });
-
-      console.log(`User ${user.id} has been unsuspended.`);
-    }
+    console.log(`User ${user.id} has been unsuspended.`);
   }
+}
 
 
-  //update posts status to expired if the post is active and accepted and the expires date is less than or equal to now
-  // This cron job runs every 10 seconds
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async handlePostExpiration() {
-    const now = new Date();
-    console.log('Cron executed at:', now);
-    const updatePostsStatus = await this.prisma.services.findMany({
-      where: {
-        status: 'active',
-        is_accepted: true,
-        expires_date: {
-          lte: now,
-        },
-      }
-    })
+//update posts status to expired if the post is active and accepted and the expires date is less than or equal to now
+// This cron job runs every 10 seconds
+@Cron(CronExpression.EVERY_10_SECONDS)
+async handlePostUpdate() {
+  const now = new Date();  
+  console.log('Cron executed at:', now);
+   const updatePostsStatus = await this.prisma.services.findMany({
+    where:{
+      status:'active',
+      is_accepted: true,
+      expires_date: {
+        lte: now,
+      },
+    }
+   })
 
     for (const post of updatePostsStatus) {
       await this.prisma.services.update({
@@ -74,45 +67,13 @@ export class SchedulerService {
         data: {
           status: "expired",
 
-        },
-      });
+      },
+    });
 
-      console.log(`Post ${post.id} has been updated to expired.`);
+    console.log(`Post ${post.id} has been updated to expired.`);
 
 
-    }
   }
-
-  
-  //need to complete this cron job
-  // This cron job runs every 10 minutes
-  //It checks and active a paused post if the paused date is less than or equal to the current date
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async handlePostPausExpirations() {
-    const now = new Date();
-    console.log('Cron executed at:', now);
-    const updatePostsStatus = await this.prisma.services.findMany({
-      where: {
-        status: 'active',
-        is_accepted: true,
-        expires_date: {
-          lte: now,
-        },
-      }
-    })
-
-    for (const post of updatePostsStatus) {
-      await this.prisma.services.update({
-        where: { id: post.id },
-        data: {
-          status: "expired",
-        },
-      });
-
-      console.log(`Post ${post.id} has been updated to expired.`);
-    }
-  }
-
-
+}
 
 }
