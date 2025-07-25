@@ -189,103 +189,113 @@ export class UserRepository {
    * @param param0
    * @returns
    */
-  static async createUser({
-    name,
-    first_name,
-    last_name,
-    email,
-    password,
-    phone_number,
-    role_id = null,
-    type,
-  }: {
-    name?: string;
-    first_name?: string;
-    last_name?: string;
-    email: string;
-    password: string;
-    phone_number?: string;
-    role_id?: string;
-    type?: string;
-  }) {
-    try {
-      const data = {};
-      if (name) {
-        data['name'] = name;
-      }
-      if (first_name) {
-        data['first_name'] = first_name;
-      }
-      if (last_name) {
-        data['last_name'] = last_name;
-      }
-      if (phone_number) {
-        data['phone_number'] = phone_number;
-      }
-      if (email) {
-        // Check if email already exist
-        const userEmailExist = await UserRepository.exist({
-          field: 'email',
-          value: String(email),
-        });
+static async createUser({
+  name,
+  first_name,
+  last_name,
+  email,
+  password,
+  phone_number,
+  role_id = null,
+  device_token,
+  type,
+}: {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  password: string;
+  phone_number?: string;
+  role_id?: string;
+  type?: string;
+  device_token?: string;
+}) {
+  try {
+    const data: any = {};  // Initialize an empty object to hold the user data
 
-        if (userEmailExist) {
-          return {
-            success: false,
-            message: 'Email already exist',
-          };
-        }
+    // Adding fields to the `data` object if they exist
+    if (name) {
+      data['name'] = name;
+    }
+    if (first_name) {
+      data['first_name'] = first_name;
+    }
+    if (last_name) {
+      data['last_name'] = last_name;
+    }
+    if (phone_number) {
+      data['phone_number'] = phone_number;
+    }
+if (device_token) {
+  data['device_token'] = device_token; // Add the device_token if available
+}
 
-        data['email'] = email;
-      }
-      if (password) {
-        data['password'] = await bcrypt.hash(
-          password,
-          appConfig().security.salt,
-        );
-      }
-
-      if (type && ArrayHelper.inArray(type, Object.values(Role))) {
-        data['type'] = type;
-
-        // if (type == Role.VENDOR) {
-        //   data['approved_at'] = DateHelper.now();
-        // }
-      }
-
-      const user = await prisma.user.create({
-        data: {
-          ...data,
-        },
+    // Check if email already exists in the database
+    if (email) {
+      const userEmailExist = await UserRepository.exist({
+        field: 'email',
+        value: String(email),
       });
 
-      if (user) {
-        if (role_id) {
-          // attach role
-          await this.attachRole({
-            user_id: user.id,
-            role_id: role_id,
-          });
-        }
-
-        return {
-          success: true,
-          message: 'User created successfully',
-          data: user,
-        };
-      } else {
+      if(!device_token){
         return {
           success: false,
-          message: 'User creation failed',
+          message: 'Device token is required',
         };
       }
-    } catch (error) {
+
+      if (userEmailExist) {
+        return {
+          success: false,
+          message: 'Email already exists',
+        };
+      }
+
+      data['email'] = email;
+    }
+
+    // Hash the password before saving
+    if (password) {
+      data['password'] = await bcrypt.hash(password, appConfig().security.salt);
+    }
+
+    // Set the user type if valid
+    if (type && ArrayHelper.inArray(type, Object.values(Role))) {
+      data['type'] = type;
+    }
+
+
+    const user = await prisma.user.create({
+      data: data, 
+    });
+
+    if (user) {
+      if (role_id) {
+        await this.attachRole({
+          user_id: user.id,
+          role_id: role_id,
+        });
+      }
+
+      return {
+        success: true,
+        message: 'User created successfully',
+        data: user,
+      };
+    } else {
       return {
         success: false,
-        message: error.message,
+        message: 'User creation failed',
       };
     }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+    };
   }
+}
+
 
   /**
    * create user under a tenant

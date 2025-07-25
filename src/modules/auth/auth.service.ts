@@ -21,131 +21,147 @@ export class AuthService {
     private mailService: MailService,
     private firebaseService: FirebaseService,
   ) { }
+async register({
+  first_name,
+  last_name,
+  email,
+  password,
+  type,
+  device_token, 
+}: {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  type?: string;
+  device_token?: string;
+}) {
+  try {
 
-  async register({
-    first_name,
-    last_name,
-    email,
-    password,
-    type,
-  }: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    type?: string;
-  }) {
-    try {
-      // Check if email already exist
-      const userEmailExist = await UserRepository.exist({
-        field: 'email',
-        value: String(email),
-      });
+    console.log('Received device token:', device_token);
+    const userEmailExist = await UserRepository.exist({
+      field: 'email',
+      value: String(email),
+    });
 
-      if (userEmailExist) {
-        return {
-          statusCode: 401,
-          message: 'Email already exist',
-        };
-      }
-
-      const user = await UserRepository.createUser({
-        first_name: first_name,
-        last_name: last_name,
-        email: email,
-        password: password,
-        type: type,
-      });
-
-      if (user == null && user.success == false) {
-        return {
-          success: false,
-          message: 'Failed to create account',
-        };
-      }
-
-      // create stripe customer account
-      const stripeCustomer = await StripePayment.createCustomer({
-        user_id: user.data.id,
-        email: email,
-        name: `${first_name} ${last_name}`,
-      });
-
-      if (stripeCustomer) {
-        await this.prisma.user.update({
-          where: {
-            id: user.data.id,
-          },
-          data: {
-            billing_id: stripeCustomer.id,
-          },
-        });
-      }
-
-      // ----------------------------------------------------
-      // create otp code
-      const token = await UcodeRepository.createToken({
-        userId: user.data.id,
-        isOtp: true,
-      });
-
-      // send otp code to email
-      await this.mailService.sendOtpCodeToEmail({
-        email: email,
-        name: `${first_name} ${last_name}`,
-        otp: token,
-      });
-
-      const userToken = await this.getUserDeviceToken(user.data.id);  // Get user device token
-      const adminToken = await this.getAdminDeviceToken();            // Get admin device token
-
-      if (userToken) {
-        await this.firebaseService.sendNotification(
-          userToken,
-          'Welcome to Local Marketplace!',
-          `Hi ${first_name} ${last_name}, your account has been created.`
-        );
-      }
-      if (adminToken) {
-        await this.firebaseService.sendNotification(
-          adminToken,
-          'New User Registered',
-          `${first_name} ${last_name} has registered.`
-        );
-      }
-
+    if (userEmailExist) {
       return {
-        success: true,
-        message: 'We have sent an OTP code to your email',
-      };
-
-      // ----------------------------------------------------
-
-      // // Generate verification token
-      // const token = await UcodeRepository.createVerificationToken({
-      //   userId: user.data.id,
-      //   email: email,
-      // });
-
-      // // Send verification email with token
-      // await this.mailService.sendVerificationLink({
-      //   email,
-      //   name: email,
-      //   token: token.token,
-      //   type: type,
-      // });
-
-      // return {
-      //   success: true,
-      //   message: 'We have sent a verification link to your email',
-      // };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
+        statusCode: 401,
+        message: 'Email already exists',
       };
     }
+
+    // Create the new user
+    const user = await UserRepository.createUser({
+      first_name,
+      last_name,
+      email,
+      password,
+      type,
+      device_token,
+    });
+    
+    if (user == null || user.success === false || device_token == null) {
+      return {
+        success: false,
+        message: 'Failed to create account',
+      };
+    }
+
+    // Create Stripe customer account
+    const stripeCustomer = await StripePayment.createCustomer({
+      user_id: user.data.id,
+      email: email,
+      name: `${first_name} ${last_name}`,
+    });
+
+    if (stripeCustomer) {
+      await this.prisma.user.update({
+        where: {
+          id: user.data.id,
+        },
+        data: {
+          billing_id: stripeCustomer.id,
+        },
+      });
+    }
+
+    // Create OTP code
+    const token = await UcodeRepository.createToken({
+      userId: user.data.id,
+      isOtp: true,
+    });
+
+    // Send OTP code to email
+    await this.mailService.sendOtpCodeToEmail({
+      email: email,
+      name: `${first_name} ${last_name}`,
+      otp: token,
+    });
+
+
+    // start notification
+    // Ensure device token is saved correctly and retrieved
+    const userToken = user.data.device_token;
+    if (!userToken) {
+      return {
+        success: false,
+        message: 'User device token not found',
+      };
+    }
+
+    // Get the admin device token
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        type: 'admin', 
+      },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        device_token: true,
+      },
+    });
+
+    if (!admin || !admin.device_token) {
+      return {
+        success: false,
+        message: 'Admin device token not found',
+      };
+    }
+
+    // Send notifications to user
+    await this.firebaseService.sendNotification(
+      user.data.id,
+      userToken,
+      'Welcome to Local Marketplace!',
+      `Hi ${first_name} ${last_name}, your account has been created.`,
+      'android'
+    );
+    
+    //send notification to admin
+    await this.firebaseService.sendNotification(
+      admin.id,
+      admin.device_token, 
+      'New User Registered',
+      `${first_name} ${last_name} has registered.`,
+      'android'
+    );
+// end notification
+    return {
+      success: true,
+      message: 'We have sent an OTP code to your email',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+    };
   }
+}
+
+
+
 
   async login({ email, userId }) {
     try {
@@ -877,22 +893,16 @@ export class AuthService {
   // --------- end 2FA ---------
 
 async getUserDeviceToken(userId: string): Promise<string | null> {
-  // Fetch the user by their ID
   const user = await this.prisma.user.findUnique({
-    where: { id: userId }, // Assuming `id` is the primary identifier for the user
+    where: { id: userId }, 
   });
 
-  // Return the user's device token if it exists, otherwise return null
   return user?.device_token ?? null;
 }
-  // Add getAdminDeviceToken method if needed
 async getAdminDeviceToken(): Promise<string | null> {
-  // Fetch the first admin from the database
   const admin = await this.prisma.user.findFirst({
-    where: { type: 'admin' }, // Assuming the admin's role is 'admin'
+    where: { type: 'admin' }, 
   });
-
-  // Return the admin's device token if it exists, otherwise return null
   return admin?.device_token ?? null;
 }
 }

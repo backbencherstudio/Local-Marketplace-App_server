@@ -59,6 +59,7 @@ export class AuthController {
       const email = data.email;
       const password = data.password;
       const type = data.type;
+      const device_token = data.device_token;
 
       if (!first_name) {
         throw new HttpException(
@@ -88,6 +89,7 @@ export class AuthController {
         email: email,
         password: password,
         type: type,
+        device_token: device_token, 
       });
 
       return response;
