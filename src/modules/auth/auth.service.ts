@@ -448,13 +448,11 @@ async register({
             token: token,
           });
           const jwtPayload = { email };
-
-          const otpToken = this.jwtService.sign(jwtPayload);
-
+          const jwtToken = this.jwtService.sign(jwtPayload, { expiresIn: '5m' });
           return {
             success: true,
             message: 'OTP validated successfully',
-            token: otpToken,
+            token: jwtToken,
           };
 
         } else {
@@ -481,7 +479,7 @@ async register({
   async resetPasswordWithToken({ token, password }) {
     try {
       // Verify the JWT token to get the email
-      const decoded: any = this.jwtService.verifyAsync(token, {
+      const decoded: any = this.jwtService.verify(token, {
         secret: appConfig().jwt.secret, // Secret key for verification
         ignoreExpiration: false, // Explicitly set to false to ensure expiration is checked
       });

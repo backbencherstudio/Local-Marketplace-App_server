@@ -47,7 +47,7 @@ export class SchedulerService {
 
 //update posts status to expired if the post is active and accepted and the expires date is less than or equal to now
 // This cron job runs every 10 seconds
-@Cron(CronExpression.EVERY_10_SECONDS)
+@Cron(CronExpression.EVERY_10_MINUTES)
 async handlePostUpdate() {
   const now = new Date();  
   console.log('Cron executed at:', now);

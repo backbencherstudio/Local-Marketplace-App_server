@@ -122,7 +122,6 @@ export class MessageGateway
   @SubscribeMessage('joinRoom')
   handleRoomJoin(client: Socket, body: { room_id: string }) {
     const roomId = body.room_id;
-
     client.join(roomId); // join the room using user_id
     client.emit('joinedRoom', { room_id: roomId });
   }
