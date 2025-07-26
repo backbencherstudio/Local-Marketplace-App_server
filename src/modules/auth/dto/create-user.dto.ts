@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @IsOptional()
@@ -22,6 +22,10 @@ export class CreateUserDto {
   @MinLength(8, { message: 'Password should be minimum 8' })
   @ApiProperty()
   password: string;
+
+  @IsOptional()
+  @IsString()
+  device_token?: string;
 
   @IsNotEmpty()
   @IsEnum(['buyer', 'seller'], {

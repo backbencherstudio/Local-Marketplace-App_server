@@ -105,7 +105,29 @@ model User {
   Report               Report[]
 
   @@map("users")
+  FCM_notification FCM_notification[]
 }
+model FCM_notification {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  device_token String? // for push notification
+  device_type  String? // e.g. android, ios, web
+
+  title   String?
+  body    String?
+  data    Json?
+  status String?
+
+  is_read Boolean? @default(false)
+
+  @@map("fcm_notifications")
+} 
 
 model Category {
   id          String     @id @default(cuid())

@@ -1,10 +1,15 @@
 import * as admin from 'firebase-admin';
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { FcmNotificationService } from 'src/modules/fcm_notification/fcm_notification.service';
+import { use } from 'passport';
 
 @Injectable()
 export class FirebaseService {
-  constructor() {
-    // Check if Firebase is already initialized
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: FcmNotificationService
+  ) {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert('C:\\BBS Project\\Local-Marketplace-App_server\\firebase-secret\\firebase-secret.json'),
@@ -13,36 +18,17 @@ export class FirebaseService {
       console.log('Firebase already initialized');
     }
   }
-
-  // Send a push notification
-  // async sendNotification(deviceToken: string, title: string, body: string) {
-  //   console.log(`Sending notification to device token: ${deviceToken}`);
-
-  //   if (!deviceToken || !title || !body) {
-  //     throw new Error('Device token, title, and body are required to send a notification');
-  //   }
-    
-  //   const message = {
-  //     token: deviceToken,
-  //     notification: {
-  //       title: title,
-  //       body: body,
-  //     },
-  //   };
-
-  //   try {
-  //     await admin.messaging().send(message);
-  //     console.log('Notification sent successfully');
-  //   } catch (error) {
-  //     console.error('Error sending notification:', error);
-  //   }
-  // }
-
-async sendNotification(deviceToken: string, title: string, body: string) {
+  async sendNotification(
+  userId: string, 
+  deviceToken: string, 
+  title: string, 
+  body: string, 
+  deviceType: string
+) {
   console.log(`Sending notification to device token: ${deviceToken}`);
 
-  if (!deviceToken || !title || !body) {
-    throw new Error('Device token, title, and body are required to send a notification');
+  if (!userId || !deviceToken || !title || !body || !deviceType) {
+    throw new Error('User ID, device token, title, body, and deviceType are required to send a notification');
   }
 
   const message: admin.messaging.Message = {
@@ -60,7 +46,7 @@ async sendNotification(deviceToken: string, title: string, body: string) {
     apns: {
       payload: {
         aps: {
-          sound: 'default', 
+          sound: 'default',
         },
       },
     },
@@ -74,8 +60,33 @@ async sendNotification(deviceToken: string, title: string, body: string) {
   try {
     const response = await admin.messaging().send(message);
     console.log('Notification sent successfully:', response);
+
+    await this.notificationService.createNotification({
+      userId,
+      deviceToken,
+      title,
+      body,
+      data: {},  
+      status: 'sent', 
+      deviceType,
+    });
+
+    return { success: true, message: 'Notification sent and logged successfully' };
   } catch (error) {
     console.error('Error sending notification:', error);
+
+    await this.notificationService.createNotification({
+      userId,
+      deviceToken,
+      title,
+      body,
+      data: {},
+      status: 'failed',
+      deviceType,
+    });
+
+    return { success: false, message: 'Failed to send notification', error: error.message };
   }
 }
+
 }

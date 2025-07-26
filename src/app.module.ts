@@ -25,6 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerService } from './SchedulerService';
 import { FirebaseModule } from './modules/firebase/firebase.module';
 import { FirebaseService } from './modules/firebase/firebase.service';
+import { FcmNotificationModule } from './modules/fcm_notification/fcm_notification.module';
 
 
 @Module({
@@ -79,6 +80,7 @@ import { FirebaseService } from './modules/firebase/firebase.service';
     CreatePostModule,
     CommonHomeModule,
     FirebaseModule,
+    FcmNotificationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -91,7 +93,7 @@ import { FirebaseService } from './modules/firebase/firebase.service';
     //   provide: APP_GUARD,
     //   useClass: ThrottlerBehindProxyGuard,
     // },
-    AppService,SchedulerService ,FirebaseService
+    AppService,SchedulerService ,FirebaseService, FcmNotificationModule
   ],
 })
 export class AppModule {
