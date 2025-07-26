@@ -432,13 +432,11 @@ export class AuthService {
             token: token,
           });
           const jwtPayload = { email };
-
-          const otpToken = this.jwtService.sign(jwtPayload);
-
+          const jwtToken = this.jwtService.sign(jwtPayload, { expiresIn: '5m' });
           return {
             success: true,
             message: 'OTP validated successfully',
-            token: otpToken,
+            token: jwtToken,
           };
 
         } else {
@@ -465,7 +463,7 @@ export class AuthService {
   async resetPasswordWithToken({ token, password }) {
     try {
       // Verify the JWT token to get the email
-      const decoded: any = this.jwtService.verifyAsync(token, {
+      const decoded: any = this.jwtService.verify(token, {
         secret: appConfig().jwt.secret, // Secret key for verification
         ignoreExpiration: false, // Explicitly set to false to ensure expiration is checked
       });
@@ -876,23 +874,23 @@ export class AuthService {
   }
   // --------- end 2FA ---------
 
-async getUserDeviceToken(userId: string): Promise<string | null> {
-  // Fetch the user by their ID
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId }, // Assuming `id` is the primary identifier for the user
-  });
+  async getUserDeviceToken(userId: string): Promise<string | null> {
+    // Fetch the user by their ID
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }, // Assuming `id` is the primary identifier for the user
+    });
 
-  // Return the user's device token if it exists, otherwise return null
-  return user?.device_token ?? null;
-}
+    // Return the user's device token if it exists, otherwise return null
+    return user?.device_token ?? null;
+  }
   // Add getAdminDeviceToken method if needed
-async getAdminDeviceToken(): Promise<string | null> {
-  // Fetch the first admin from the database
-  const admin = await this.prisma.user.findFirst({
-    where: { type: 'admin' }, // Assuming the admin's role is 'admin'
-  });
+  async getAdminDeviceToken(): Promise<string | null> {
+    // Fetch the first admin from the database
+    const admin = await this.prisma.user.findFirst({
+      where: { type: 'admin' }, // Assuming the admin's role is 'admin'
+    });
 
-  // Return the admin's device token if it exists, otherwise return null
-  return admin?.device_token ?? null;
-}
+    // Return the admin's device token if it exists, otherwise return null
+    return admin?.device_token ?? null;
+  }
 }
