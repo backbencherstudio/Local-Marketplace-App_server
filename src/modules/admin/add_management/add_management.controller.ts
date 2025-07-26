@@ -83,16 +83,16 @@ export class AddManagementController {
     return this.addManagementService.approvePost(id, req);
   }
 
-  @Patch('reject/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @Patch('reject/:id')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
 
-  async rejectPost(
-    @Param('id') id: string,
-    @Body('reason') reason: string,
-    @Req() req: any,
-  ) {
-    return this.addManagementService.rejectPost(id, reason, req);
-  }
+  // async rejectPost(
+  //   @Param('id') id: string,
+  //   @Body('reason') reason: string,
+  //   @Req() req: any,
+  // ) {
+  //   return this.addManagementService.rejectPost(id, reason, req);
+  // }
 
 }

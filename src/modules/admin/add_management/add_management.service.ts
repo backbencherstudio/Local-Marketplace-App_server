@@ -337,89 +337,89 @@ export class AddManagementService {
       data: updatedPost,
     };
   }
-  async rejectPost(id: string, reason: string, req: any) {
-    const userId = req.user.userId;
-    const currentUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!currentUser) {
-      return {
-        success: false,
-        message: 'User not found',
-      };
-    }
-    if (currentUser.type !== 'admin') {
-      return {
-        success: false,
-        message: 'Only admins can pause posts',
-      };
-    }
-    const post = await this.prisma.services.findFirst({
-      where: {
-        id: id,
-        status: 'pending',
-      },
-    });
-    if (!post) {
-      return {
-        success: false,
-        message: 'No service available with the status pending. Post not found.',
-      };
-    }
-    const updatedPost = await this.prisma.services.update({
-      where: { id },
-      data: {
-        is_accepted: false,
-        rejected_at: new Date(),
-        rejected_reason: reason,
-        status: 'rejected',
-      },
-    });
+  // async rejectPost(id: string, reason: string, req: any) {
+  //   const userId = req.user.userId;
+  //   const currentUser = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
+  //   if (!currentUser) {
+  //     return {
+  //       success: false,
+  //       message: 'User not found',
+  //     };
+  //   }
+  //   if (currentUser.type !== 'admin') {
+  //     return {
+  //       success: false,
+  //       message: 'Only admins can pause posts',
+  //     };
+  //   }
+  //   const post = await this.prisma.services.findFirst({
+  //     where: {
+  //       id: id,
+  //       status: 'pending',
+  //     },
+  //   });
+  //   if (!post) {
+  //     return {
+  //       success: false,
+  //       message: 'No service available with the status pending. Post not found.',
+  //     };
+  //   }
+  //   const updatedPost = await this.prisma.services.update({
+  //     where: { id },
+  //     data: {
+  //       is_accepted: false,
+  //       rejected_at: new Date(),
+  //       rejected_reason: reason,
+  //       status: 'rejected',
+  //     },
+  //   });
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: post.user_id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        device_token: true,
-        device_type: true,
-      },
-    });
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: post.user_id },
+  //     select: {
+  //       id: true,
+  //       email: true,
+  //       name: true,
+  //       device_token: true,
+  //       device_type: true,
+  //     },
+  //   });
 
-    const admin = await this.prisma.user.findFirst({
-      where: { type: 'admin' },
-    });
+  //   const admin = await this.prisma.user.findFirst({
+  //     where: { type: 'admin' },
+  //   });
 
-    // Send notification to the user about the rejection
+  //   // Send notification to the user about the rejection
     
-    await this.firebaseService.sendNotification(
-      user.id,
-      user.device_token,
-      'Post Rejected',
-      `Your post "${post.title}" has been rejected. Reason: ${reason}`,
-      user.device_type,
-    );
-    if (!user) {
-      return {
-        success: false,
-        message: 'User not found',
-      };
-    }
+  //   await this.firebaseService.sendNotification(
+  //     user.id,
+  //     user.device_token,
+  //     'Post Rejected',
+  //     `Your post "${post.title}" has been rejected. Reason: ${reason}`,
+  //     user.device_type,
+  //   );
+  //   if (!user) {
+  //     return {
+  //       success: false,
+  //       message: 'User not found',
+  //     };
+  //   }
 
-    await this.firebaseService.sendNotification(
-      admin.id,
-      admin.device_token,
-      'Post Rejected',
-      `The post "${post.title}" has been succesfully rejected `,
-      admin.device_type,
-    );
+  //   await this.firebaseService.sendNotification(
+  //     admin.id,
+  //     admin.device_token,
+  //     'Post Rejected',
+  //     `The post "${post.title}" has been succesfully rejected `,
+  //     admin.device_type,
+  //   );
   
 
-    return {
-      success: true,
-      message: 'Post has been rejected successfully',
-      data: updatedPost,
-    };
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Post has been rejected successfully',
+  //     data: updatedPost,
+  //   };
+  // }
 }
