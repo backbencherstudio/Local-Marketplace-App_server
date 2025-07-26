@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Category, ServiceStatus } from '@prisma/client';
+import { FirebaseService } from 'src/modules/firebase/firebase.service';
 
 @Injectable()
 export class AddManagementService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService , private readonly firebaseService:FirebaseService) { }
 
 
   //category management methods
@@ -374,6 +375,46 @@ export class AddManagementService {
         status: 'rejected',
       },
     });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: post.user_id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        device_token: true,
+        device_type: true,
+      },
+    });
+
+    const admin = await this.prisma.user.findFirst({
+      where: { type: 'admin' },
+    });
+
+    // Send notification to the user about the rejection
+    
+    await this.firebaseService.sendNotification(
+      user.id,
+      user.device_token,
+      'Post Rejected',
+      `Your post "${post.title}" has been rejected. Reason: ${reason}`,
+      user.device_type,
+    );
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    await this.firebaseService.sendNotification(
+      admin.id,
+      admin.device_token,
+      'Post Rejected',
+      `The post "${post.title}" has been succesfully rejected `,
+      admin.device_type,
+    );
+  
 
     return {
       success: true,
