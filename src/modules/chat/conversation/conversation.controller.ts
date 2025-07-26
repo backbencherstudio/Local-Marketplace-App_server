@@ -53,13 +53,12 @@ export class ConversationController {
     }
   }
 
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get all conversations' })
-  @Get()
-  async findAll() {
+  @ApiOperation({ summary: 'Get a conversation by id' })
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
     try {
-      const conversations = await this.conversationService.findAll();
-      return conversations;
+      const conversation = await this.conversationService.findOne(id);
+      return conversation;
     } catch (error) {
       return {
         success: false,
@@ -68,12 +67,13 @@ export class ConversationController {
     }
   }
 
-  @ApiOperation({ summary: 'Get a conversation by id' })
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all conversations' })
+  @Get()
+  async findAll() {
     try {
-      const conversation = await this.conversationService.findOne(id);
-      return conversation;
+      const conversations = await this.conversationService.findAll();
+      return conversations;
     } catch (error) {
       return {
         success: false,
