@@ -126,8 +126,6 @@
 
         // Display message in the chat box
         const displayMessage = (data) => {
-            console.log(data);
-
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             messageElement.classList.add(data.from === senderIdInput.value ? 'self' : 'other');
