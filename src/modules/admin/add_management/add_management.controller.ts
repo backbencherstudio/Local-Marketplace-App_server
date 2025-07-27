@@ -32,10 +32,15 @@ export class AddManagementController {
     return this.addManagementService.createCategory(createCategoryDto);
   }
 
+  @Post('bulk-create')
+  async bulkCreate() {
+    return this.addManagementService.bulkCreateCommunityCategories();
+  }
+
   @Delete('category/:id')
   deleteCategory(@Param('id') id: string) {
     return this.addManagementService.deleteCategory(id);
-  } 
+  }
 
 
   // add management endpoints
@@ -64,7 +69,6 @@ export class AddManagementController {
   @Patch('pause/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-
   async pausePost(
     @Param('id') id: string,
     @Body('reason') reason: string,
@@ -83,16 +87,16 @@ export class AddManagementController {
     return this.addManagementService.approvePost(id, req);
   }
 
-  // @Patch('reject/:id')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
+  @Patch('reject/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
 
-  // async rejectPost(
-  //   @Param('id') id: string,
-  //   @Body('reason') reason: string,
-  //   @Req() req: any,
-  // ) {
-  //   return this.addManagementService.rejectPost(id, reason, req);
-  // }
+  async rejectPost(
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+    @Req() req: any,
+  ) {
+    return this.addManagementService.rejectPost(id, reason, req);
+  }
 
 }
