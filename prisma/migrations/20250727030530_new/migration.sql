@@ -1,4 +1,25 @@
 -- CreateEnum
+CREATE TYPE "Suspended" AS ENUM ('Until_i_Decide', 'One_Week', 'One_Month', 'Three_Months');
+
+-- CreateEnum
+CREATE TYPE "userType" AS ENUM ('seller', 'buyer', 'admin');
+
+-- CreateEnum
+CREATE TYPE "SalaryType" AS ENUM ('Monthly', 'Yearly');
+
+-- CreateEnum
+CREATE TYPE "ExpiresAt" AS ENUM ('days_7', 'days_14', 'days_30');
+
+-- CreateEnum
+CREATE TYPE "ServiceType" AS ENUM ('Services', 'Jobs', 'For_sale', 'Help', 'Gigs', 'Community');
+
+-- CreateEnum
+CREATE TYPE "ServiceStatus" AS ENUM ('pending', 'active', 'pause', 'rejected', 'accepted', 'expired');
+
+-- CreateEnum
+CREATE TYPE "ConversationType" AS ENUM ('Profile', 'Services', 'Jobs', 'For_sale', 'Help', 'Gigs', 'Community');
+
+-- CreateEnum
 CREATE TYPE "MessageStatus" AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'READ');
 
 -- CreateTable
@@ -30,6 +51,8 @@ CREATE TABLE "users" (
     "status" SMALLINT DEFAULT 1,
     "approved_at" TIMESTAMP(3),
     "availability" TEXT,
+    "about" TEXT,
+    "experience" TEXT[],
     "email" TEXT,
     "username" TEXT,
     "name" VARCHAR(255),
@@ -38,6 +61,8 @@ CREATE TABLE "users" (
     "password" VARCHAR(255),
     "domain" TEXT,
     "avatar" TEXT,
+    "device_token" TEXT,
+    "device_type" TEXT,
     "phone_number" TEXT,
     "country" TEXT,
     "state" TEXT,
@@ -46,6 +71,8 @@ CREATE TABLE "users" (
     "zip_code" TEXT,
     "gender" TEXT,
     "date_of_birth" DATE,
+    "suspended_at" TIMESTAMP(3),
+    "suspended_until" TIMESTAMP(3),
     "billing_id" TEXT,
     "type" TEXT DEFAULT 'user',
     "email_verified_at" TIMESTAMP(3),
@@ -53,6 +80,73 @@ CREATE TABLE "users" (
     "two_factor_secret" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "fcm_notifications" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT,
+    "device_token" TEXT,
+    "device_type" TEXT,
+    "title" TEXT,
+    "body" TEXT,
+    "data" JSONB,
+    "status" TEXT,
+    "is_read" BOOLEAN DEFAULT false,
+
+    CONSTRAINT "fcm_notifications_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "categories" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "parent_id" TEXT,
+    "parent_name" TEXT,
+    "title" TEXT,
+    "slug" TEXT,
+
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "services" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "status" "ServiceStatus" DEFAULT 'pending',
+    "type" "ServiceType",
+    "title" TEXT,
+    "description" TEXT,
+    "thumbnail" TEXT,
+    "tags" TEXT[],
+    "price" TEXT,
+    "salary_range" TEXT,
+    "salary_type" "SalaryType",
+    "location" TEXT,
+    "category_id" TEXT,
+    "user_id" TEXT,
+    "username" TEXT,
+    "expires_at" "ExpiresAt",
+    "expires_date" TIMESTAMP(3),
+    "allow_chat_only" BOOLEAN,
+    "show_chat_info" BOOLEAN,
+    "is_accepted" BOOLEAN DEFAULT false,
+    "rejected_at" TIMESTAMP(3),
+    "rejected_reason" TEXT,
+    "is_paused" BOOLEAN DEFAULT false,
+    "paused_at" TIMESTAMP(3),
+    "paused_reason" TEXT,
+    "is_reported" INTEGER DEFAULT 0,
+    "reported_at" TIMESTAMP(3),
+
+    CONSTRAINT "services_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -185,6 +279,19 @@ CREATE TABLE "payment_transactions" (
 );
 
 -- CreateTable
+CREATE TABLE "conversations" (
+    "id" TEXT NOT NULL,
+    "creator_id" TEXT,
+    "participant_id" TEXT,
+    "type" "ConversationType",
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "messages" (
     "id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -213,18 +320,6 @@ CREATE TABLE "attachments" (
     "file_alt" TEXT,
 
     CONSTRAINT "attachments_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "conversations" (
-    "id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deleted_at" TIMESTAMP(3),
-    "creator_id" TEXT,
-    "participant_id" TEXT,
-
-    CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -318,11 +413,64 @@ CREATE TABLE "user_settings" (
 );
 
 -- CreateTable
+CREATE TABLE "report_types" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "name" TEXT,
+
+    CONSTRAINT "report_types_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "report_categories" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "name" TEXT,
+
+    CONSTRAINT "report_categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "reports" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT,
+    "service_id" TEXT,
+    "reason" TEXT,
+    "report_type" TEXT,
+    "report_category" TEXT,
+
+    CONSTRAINT "reports_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_PermissionToRole" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
 
     CONSTRAINT "_PermissionToRole_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_ReportToReportType" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ReportToReportType_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_ReportToReportCategory" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ReportToReportCategory_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -338,13 +486,31 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 CREATE UNIQUE INDEX "users_domain_key" ON "users"("domain");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "settings_key_key" ON "settings"("key");
 
 -- CreateIndex
 CREATE INDEX "_PermissionToRole_B_index" ON "_PermissionToRole"("B");
 
+-- CreateIndex
+CREATE INDEX "_ReportToReportType_B_index" ON "_ReportToReportType"("B");
+
+-- CreateIndex
+CREATE INDEX "_ReportToReportCategory_B_index" ON "_ReportToReportCategory"("B");
+
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "fcm_notifications" ADD CONSTRAINT "fcm_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "services" ADD CONSTRAINT "services_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "services" ADD CONSTRAINT "services_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ucodes" ADD CONSTRAINT "ucodes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -380,6 +546,12 @@ ALTER TABLE "user_payment_methods" ADD CONSTRAINT "user_payment_methods_user_id_
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_participant_id_fkey" FOREIGN KEY ("participant_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -392,19 +564,31 @@ ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KE
 ALTER TABLE "messages" ADD CONSTRAINT "messages_attachment_id_fkey" FOREIGN KEY ("attachment_id") REFERENCES "attachments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "conversations" ADD CONSTRAINT "conversations_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "conversations" ADD CONSTRAINT "conversations_participant_id_fkey" FOREIGN KEY ("participant_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_setting_id_fkey" FOREIGN KEY ("setting_id") REFERENCES "settings"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "reports" ADD CONSTRAINT "reports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reports" ADD CONSTRAINT "reports_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "services"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_A_fkey" FOREIGN KEY ("A") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_B_fkey" FOREIGN KEY ("B") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ReportToReportType" ADD CONSTRAINT "_ReportToReportType_A_fkey" FOREIGN KEY ("A") REFERENCES "reports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ReportToReportType" ADD CONSTRAINT "_ReportToReportType_B_fkey" FOREIGN KEY ("B") REFERENCES "report_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ReportToReportCategory" ADD CONSTRAINT "_ReportToReportCategory_A_fkey" FOREIGN KEY ("A") REFERENCES "reports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ReportToReportCategory" ADD CONSTRAINT "_ReportToReportCategory_B_fkey" FOREIGN KEY ("B") REFERENCES "report_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;

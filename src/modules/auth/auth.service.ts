@@ -110,8 +110,8 @@ async register({
       };
     }
 
-    // Get the admin device token
-    const admin = await this.prisma.user.findFirst({
+    // Get the admin device tokens
+    const admins = await this.prisma.user.findMany({
       where: {
         type: 'admin', 
       },
@@ -123,7 +123,11 @@ async register({
       },
     });
 
-    if (!admin || !admin.device_token) {
+    const adminDeviceTokens = admins
+      .filter(a => !!a.device_token)
+      .map(a => ({ id: a.id, device_token: a.device_token }));
+
+    if (!adminDeviceTokens.length) {
       return {
         success: false,
         message: 'Admin device token not found',
@@ -139,14 +143,16 @@ async register({
       'android'
     );
     
-    //send notification to admin
-    await this.firebaseService.sendNotification(
-      admin.id,
-      admin.device_token, 
-      'New User Registered',
-      `${first_name} ${last_name} has registered.`,
-      'android'
-    );
+    //send notification to all admins
+    for (const admin of adminDeviceTokens) {
+      await this.firebaseService.sendNotification(
+        admin.id,
+        admin.device_token, 
+        'New User Registered',
+        `${first_name} ${last_name} has registered.`,
+        'android'
+      );
+    }
 // end notification
     return {
       success: true,
@@ -890,17 +896,32 @@ async register({
   }
   // --------- end 2FA ---------
 
-async getUserDeviceToken(userId: string): Promise<string | null> {
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId }, 
-  });
+// async getUserDeviceToken(userId: string): Promise<string | null> {
+//   const user = await this.prisma.user.findUnique({
+//     where: { id: userId }, 
+//   });
 
-  return user?.device_token ?? null;
-}
-async getAdminDeviceToken(): Promise<string | null> {
-  const admin = await this.prisma.user.findFirst({
-    where: { type: 'admin' }, 
-  });
-  return admin?.device_token ?? null;
-}
+//   return user?.device_token ?? null;
+// }
+// async getAdminDeviceTokens(): Promise<string[]> {
+//   try {
+//     const admins = await this.prisma.user.findMany({
+//       where: { type: 'admin' },
+//        select:{
+//         device_token: true,
+//        }
+//     });
+
+//     // Collect all device tokens for admins
+//     const adminDeviceTokens = admins.map(admin => admin.device_token);
+//     console.log(adminDeviceTokens);
+//     return adminDeviceTokens; 
+
+     
+//   } catch (error) {
+//     console.error('Error retrieving device tokens for admins', error);
+//     return [];  
+//   }
+// }
+
 }

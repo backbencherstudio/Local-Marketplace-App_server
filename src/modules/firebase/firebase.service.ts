@@ -12,7 +12,7 @@ export class FirebaseService {
   ) {
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert('C:\\BBS Project\\Local-Marketplace-App_server\\firebase-secret\\firebase-secret.json'),
+        credential: admin.credential.cert('D:/BBS WORKING PROJECTS/Local-Marketplace-App_efren/firebase-secret/firebase-secret.json'),
       });
     } else {
       console.log('Firebase already initialized');
