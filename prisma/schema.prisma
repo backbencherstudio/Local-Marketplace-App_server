@@ -48,31 +48,29 @@ model User {
   id     String @id @default(cuid())
   status Int?   @default(1) @db.SmallInt
 
-  email_verified_at DateTime?
-  type              String?   @default("user")
-  email             String?   @unique
-  name              String?   @db.VarChar(255)
-  first_name        String?   @db.VarChar(255)
-  last_name         String?   @db.VarChar(255)
-  device_token      String? // for push notification
-  device_type       String? // e.g. android, ios, web
-  about             String?
-  experience        String[]
-  gender            String?
-  date_of_birth     DateTime? @db.Date
-  avatar            String?
-  phone_number      String?
-  address           String?
-  city              String?
-  zip_code          String?
-  state             String?
-  country           String?
+  approved_at   DateTime?
+  availability  String?
+  about         String?
+  experience    String[]
+  email         String?   @unique
+  username      String?   @unique
+  name          String?   @db.VarChar(255)
+  first_name    String?   @db.VarChar(255)
+  last_name     String?   @db.VarChar(255)
+  password      String?   @db.VarChar(255)
+  domain        String?   @unique
+  avatar        String?
+  device_token  String? // for push notification
+  device_type   String? // e.g. android, ios, web
+  phone_number  String?
+  country       String?
+  state         String?
+  city          String?
+  address       String?
+  zip_code      String?
+  gender        String?
+  date_of_birth DateTime? @db.Date
 
-  password        String?   @db.VarChar(255)
-  username        String?   @unique
-  domain          String?   @unique
-  approved_at     DateTime?
-  availability    String?
   //suspend 
   suspended_at    DateTime?
   suspended_until DateTime?
@@ -99,11 +97,6 @@ model User {
   payment_transactions PaymentTransaction[]
   Services             Services[]
   Report               Report[]
-  FCM_notification     FCM_notification[]
-
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
 
   @@map("users")
 }
