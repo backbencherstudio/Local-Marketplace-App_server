@@ -51,20 +51,20 @@ model User {
   deleted_at DateTime?
   status     Int?      @default(1) @db.SmallInt
 
-  approved_at  DateTime?
-  availability String?
-  about        String?
-  experience   String[]
-  email        String?   @unique
-  username     String?   @unique
-  name         String?   @db.VarChar(255)
-  first_name   String?   @db.VarChar(255)
-  last_name    String?   @db.VarChar(255)
-  password     String?   @db.VarChar(255)
-  domain       String?   @unique
-  avatar       String?
-  device_token String? // for push notification
-  device_type  String? // e.g. android, ios, web
+  approved_at   DateTime?
+  availability  String?
+  about         String?
+  experience    String[]
+  email         String?   @unique
+  username      String?   @unique
+  name          String?   @db.VarChar(255)
+  first_name    String?   @db.VarChar(255)
+  last_name     String?   @db.VarChar(255)
+  password      String?   @db.VarChar(255)
+  domain        String?   @unique
+  avatar        String?
+  device_token  String? // for push notification
+  device_type   String? // e.g. android, ios, web
   phone_number  String?
   country       String?
   state         String?
@@ -103,10 +103,11 @@ model User {
   payment_transactions PaymentTransaction[]
   Services             Services[]
   Report               Report[]
+  FCM_notification     FCM_notification[]
 
   @@map("users")
-  FCM_notification FCM_notification[]
 }
+
 model FCM_notification {
   id         String    @id @default(cuid())
   created_at DateTime  @default(now())
@@ -119,15 +120,15 @@ model FCM_notification {
   device_token String? // for push notification
   device_type  String? // e.g. android, ios, web
 
-  title   String?
-  body    String?
-  data    Json?
+  title  String?
+  body   String?
+  data   Json?
   status String?
 
   is_read Boolean? @default(false)
 
   @@map("fcm_notifications")
-} 
+}
 
 model Category {
   id          String     @id @default(cuid())

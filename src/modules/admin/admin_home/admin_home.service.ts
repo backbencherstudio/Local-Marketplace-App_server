@@ -62,35 +62,88 @@ export class AdminHomeService {
       totalApprovedPosts: totalApprovedPosts,
     };
   }
-  async getPopularCategories() {
-    const popularCategories = await this.prisma.category.findMany({
-      where: {
-        Services: {
-          some: {
-            status: 'active',
-          },
-        },
-      },
-      select: {
-        id: true,
-        parent_name: true,
-        _count: {
-          select: { Services: true },
-        },
-      },
-      orderBy: {
-        Services: {
-          _count: 'desc',
-        },
-      },
-      take: 5,
-    });
+  // async getPopularCategories() {
+  //   const popularCategories = await this.prisma.category.findMany({
+  //     where: {
+  //       Services: {
+  //         some: {
+  //           status: 'active',
+  //         },
+  //       },
+  //     },
+  //     select: {
+  //       id: true,
+  //       parent_name: true,
+  //       _count: {
+  //         select: { Services: true },
+  //       },
+  //     },
+  //     orderBy: {
+  //       Services: {
+  //         _count: 'desc',
+  //       },
+  //     },
+  //     take: 5,
+  //   });
 
-    return {
-      message: 'Popular categories fetched successfully',
-      popularCategories: popularCategories,
-    };
-  }
+  //   return {
+  //     message: 'Popular categories fetched successfully',
+  //     popularCategories: popularCategories,
+  //   };
+  // }
+
+
+async getPopularCategories() {
+  const allCategories = ["Services", "Job", "For Sale", "Gigs", "Help", "Community"];
+
+  const categories = await this.prisma.category.findMany({
+    where: {
+      Services: {
+        some: {
+          status: 'active',
+        },
+      },
+    },
+    select: {
+      parent_name: true,
+      _count: {
+        select: { Services: true },
+      },
+    },
+    orderBy: {
+      Services: {
+        _count: 'desc',
+      },
+    },
+  });
+
+  const categoryMap = categories.reduce((acc, cat) => {
+    acc[cat.parent_name] = cat._count.Services;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const mergedCategories = allCategories.map((name) => ({
+    name,
+    count: categoryMap[name] || 0,
+  }));
+
+  const total = mergedCategories.reduce((sum, cat) => sum + cat.count, 0);
+
+  const popularCategories = mergedCategories.map((cat) => ({
+    name: cat.name,
+    count: cat.count,
+    percentage: total > 0 ? Math.round((cat.count / total) * 100) : 0,
+  }));
+
+  return {
+    message: 'Popular categories fetched successfully',
+    popularCategories,
+  };
+}
+
+
+
+
   async getPopularPosts() {
     // 1. Get top 3 most-used categories
     const topCategories = await this.prisma.services.groupBy({
