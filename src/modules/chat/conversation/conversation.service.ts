@@ -228,6 +228,12 @@ export class ConversationService {
             appConfig().storageUrl.avatar + conversation.participant.avatar,
           );
         }
+        if (userId === conversation.participant_id) {
+          const tempCreator = conversation.creator;
+          const tempParticipant = conversation.participant;
+          conversation.participant = tempCreator;
+          conversation.creator = tempParticipant;
+        }
       }
 
       return {
