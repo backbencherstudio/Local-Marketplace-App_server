@@ -6,7 +6,7 @@ import { FirebaseService } from 'src/modules/firebase/firebase.service';
 
 @Injectable()
 export class AddManagementService {
-  constructor(private readonly prisma: PrismaService , private readonly firebaseService:FirebaseService) { }
+  constructor(private readonly prisma: PrismaService, private readonly firebaseService: FirebaseService) { }
 
 
   //category management methods
@@ -14,14 +14,15 @@ export class AddManagementService {
 
     const existingCategory = await this.prisma.category.findUnique({
       where: { id: createCategoryDto.parent_id },
-      select: { id: true , title: true},
+      select: { id: true, title: true, parent_name: true, parent_id: true },
     });
     if (!existingCategory) {
       return {
-        message: 'Parent category not found', 
-    }   };
-    
-    if (existingCategory.title !== null || existingCategory.title !== undefined) {
+        message: 'Parent category not found',
+      }
+    };
+
+    if (existingCategory.parent_name !== null || existingCategory.parent_id !== null) {
       return {
         message: 'This is not a parent category, you cannot create a subcategory under it',
       };
@@ -31,7 +32,7 @@ export class AddManagementService {
       data: {
         title: createCategoryDto.title,
         slug: createCategoryDto.slug,
-        parent_id: existingCategory.id,
+        parent_id: createCategoryDto.parent_id,
         parent_name: existingCategory.title,
       },
     });
@@ -75,6 +76,27 @@ export class AddManagementService {
       data: existingCategory,
     };
   }
+
+  async bulkCreateCommunityCategories(): Promise<any> {
+    const parentId = 'cmdl3uinh0005rebw9y4ua65k';
+
+    const categories: CreateCategoryDto[] = [
+      { title: 'Lost & Found', slug: 'lost-found', parent_id: parentId },
+      { title: 'Local Events', slug: 'local-events', parent_id: parentId },
+      { title: 'Neighborhood Discussions', slug: 'neighborhood-discussions', parent_id: parentId },
+      { title: 'Help Requests', slug: 'help-requests', parent_id: parentId },
+    ];
+
+    return this.prisma.category.createMany({
+      data: categories,
+      skipDuplicates: true,
+    });
+  }
+
+
+
+
+
 
 
   // add management methods
@@ -235,16 +257,15 @@ export class AddManagementService {
     return formattedPost;
   }
   async approvePost(id: string, req: any) {
-    const user = req.user.userId
+    const userId = req.user.userId;
+
     const currentUser = await this.prisma.user.findUnique({
       where: {
-        id: user,
-        type: 'admin',
+        id: userId,
       },
     });
 
-
-    if (!user) {
+    if (!currentUser) {
       return {
         success: false,
         message: 'User not found',
@@ -254,23 +275,24 @@ export class AddManagementService {
     if (currentUser.type !== 'admin') {
       return {
         success: false,
-        message: 'Only admins can pause posts',
+        message: 'Only admins can approve posts',
       };
     }
 
     const post = await this.prisma.services.findFirst({
       where: {
         id: id,
-        AND: [
+        OR: [
           { status: 'pause' },
-          { status: 'pending' }
+          { status: 'pending' },
         ],
       },
     });
+
     if (!post) {
       return {
         success: false,
-        message: 'No service available with the status pending or pause. Post not found.',
+        message: 'No service found with status "pause" or "pending".',
       };
     }
 
@@ -288,7 +310,8 @@ export class AddManagementService {
     });
 
     return {
-      message: 'Post has been active successfully',
+      success: true,
+      message: 'Post has been activated successfully',
       data: updatepost,
     };
   }
@@ -337,89 +360,93 @@ export class AddManagementService {
       data: updatedPost,
     };
   }
-  // async rejectPost(id: string, reason: string, req: any) {
-  //   const userId = req.user.userId;
-  //   const currentUser = await this.prisma.user.findUnique({
-  //     where: { id: userId },
-  //   });
-  //   if (!currentUser) {
-  //     return {
-  //       success: false,
-  //       message: 'User not found',
-  //     };
-  //   }
-  //   if (currentUser.type !== 'admin') {
-  //     return {
-  //       success: false,
-  //       message: 'Only admins can pause posts',
-  //     };
-  //   }
-  //   const post = await this.prisma.services.findFirst({
-  //     where: {
-  //       id: id,
-  //       status: 'pending',
-  //     },
-  //   });
-  //   if (!post) {
-  //     return {
-  //       success: false,
-  //       message: 'No service available with the status pending. Post not found.',
-  //     };
-  //   }
-  //   const updatedPost = await this.prisma.services.update({
-  //     where: { id },
-  //     data: {
-  //       is_accepted: false,
-  //       rejected_at: new Date(),
-  //       rejected_reason: reason,
-  //       status: 'rejected',
-  //     },
-  //   });
 
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { id: post.user_id },
-  //     select: {
-  //       id: true,
-  //       email: true,
-  //       name: true,
-  //       device_token: true,
-  //       device_type: true,
-  //     },
-  //   });
+  //notifications is added into rejectPost method
+  async rejectPost(id: string, reason: string, req: any) {
+    const userId = req.user.userId;
 
-  //   const admin = await this.prisma.user.findFirst({
-  //     where: { type: 'admin' },
-  //   });
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId } });
 
-  //   // Send notification to the user about the rejection
-    
-  //   await this.firebaseService.sendNotification(
-  //     user.id,
-  //     user.device_token,
-  //     'Post Rejected',
-  //     `Your post "${post.title}" has been rejected. Reason: ${reason}`,
-  //     user.device_type,
-  //   );
-  //   if (!user) {
-  //     return {
-  //       success: false,
-  //       message: 'User not found',
-  //     };
-  //   }
+    if (!currentUser) {
+      return { success: false, message: 'User not found' };
+    }
 
-  //   await this.firebaseService.sendNotification(
-  //     admin.id,
-  //     admin.device_token,
-  //     'Post Rejected',
-  //     `The post "${post.title}" has been succesfully rejected `,
-  //     admin.device_type,
-  //   );
-  
+    if (currentUser.type !== 'admin') {
+      return { success: false, message: 'Only admins can reject posts' };
+    }
 
-  //   return {
-  //     success: true,
-  //     message: 'Post has been rejected successfully',
-  //     data: updatedPost,
-  //   };
-  // }
+    const post = await this.prisma.services.findFirst({
+      where: { id, status: 'pending' },
+    });
+
+    if (!post) {
+      return {
+        success: false,
+        message: 'No service available with status pending. Post not found.',
+      };
+    }
+
+    const updatedPost = await this.prisma.services.update({
+      where: { id },
+      data: {
+        is_accepted: false,
+        rejected_at: new Date(),
+        rejected_reason: reason,
+        status: 'rejected',
+      },
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: post.user_id },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        device_token: true,
+        device_type: true,
+      },
+    });
+
+    const admins = await this.prisma.user.findMany({
+      where: { type: 'admin' },
+      select: { id: true, device_token: true, device_type: true },
+    });
+
+    console.log("User fetched for notification:", user);
+    console.log("Admins fetched for notification:", admins);
+
+    if (user?.device_token) {
+      await this.firebaseService.sendNotification(
+        user.id,
+        user.device_token,
+        'Post Rejected',
+        `Your post "${post.title}" has been rejected. Reason: ${reason}`,
+        user.device_type || 'android',
+      );
+      console.log(`Notification sent to user: ${user.first_name}`);
+    } else {
+      console.log(`Skipped user notification - no device token`);
+    }
+
+    for (const admin of admins) {
+      if (admin.device_token) {
+        await this.firebaseService.sendNotification(
+          admin.id,
+          admin.device_token,
+          'Post Rejected',
+          `The post "${post.title}" has been rejected by Admin.`,
+          admin.device_type || 'android',
+        );
+        console.log(`Notification sent to admin ID: ${admin.id}`);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Post has been rejected successfully',
+      data: updatedPost,
+    };
+  }
+
+
 }
