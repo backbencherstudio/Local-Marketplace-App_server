@@ -106,9 +106,10 @@ export class MessageService {
         },
       });
 
+      // emit the message to the conversation room
       this.messageGateway.server
         .to(this.messageGateway.clients.get(data.receiver_id))
-        .emit('message', { from: data.receiver_id, data: message });
+        .emit('message', { from: user_id, data: message });
 
       return {
         success: true,

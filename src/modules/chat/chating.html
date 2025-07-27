@@ -124,6 +124,16 @@
             }
         };
 
+        // Display message in the chat box
+        const displayMessage = (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(data.from === senderIdInput.value ? 'self' : 'other');
+            messageElement.innerHTML = `<strong>${data.from}:</strong> ${data.data.message}`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Auto scroll to the latest message
+        };
+
         // Send message function
         const sendMessage = async () => {
             const message = messageInput.value;
@@ -146,13 +156,22 @@
                     );
 
                     if (response.data.success) {
-                        // Emit the message to other clients via Socket.IO
+                        // Emit the message to other clients via Socket.IO 
                         socket.emit('sendMessage', {
                             to: conversation_ID,
                             data: {
                                 sender: { id: senderIdInput.value },
                                 message: message,
                             },
+                        });
+                        displayMessage({
+                            from: senderIdInput.value,
+                            data: {
+                                message: message,
+                                conversation_id: conversation_ID,
+                                sender_id: senderIdInput.value
+
+                            }
                         });
                         messageInput.value = '';
                     } else {
@@ -164,6 +183,7 @@
             } else {
                 alert('Please ensure you are connected and fill in the message');
             }
+
         };
 
         // Handle Connect button click
@@ -186,7 +206,7 @@
                 socket.on('message', (data) => {
                     console.log("Received message: ", data);
                     // Only display the message if it's from the current conversation
-                    if (data.to === conversation_ID) {
+                    if (data.data.conversation_id === conversation_ID) {
                         displayMessage(data);
                     }
                 });
@@ -194,16 +214,6 @@
                 alert('Please fill in all fields');
             }
         });
-
-        // Display message in the chat box
-        const displayMessage = (data) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.classList.add(data.from === senderIdInput.value ? 'self' : 'other');
-            messageElement.innerHTML = `<strong>${data.from}:</strong> ${data.data.message}`;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;  // Auto scroll to the latest message
-        };
 
         // Send message on button click
         sendMessageBtn.addEventListener('click', sendMessage);

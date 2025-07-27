@@ -22,6 +22,7 @@ export class AuthService {
     private firebaseService: FirebaseService,
   ) { }
 async register({
+  name,
   first_name,
   last_name,
   email,
@@ -29,6 +30,7 @@ async register({
   type,
   device_token, 
 }: {
+  name: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -53,6 +55,7 @@ async register({
 
     // Create the new user
     const user = await UserRepository.createUser({
+      name,
       first_name,
       last_name,
       email,
