@@ -98,5 +98,12 @@ export class AddManagementController {
   ) {
     return this.addManagementService.rejectPost(id, reason, req);
   }
+   
 
+  @Delete('delete-post/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  async deletePost(@Param('id') id: string, @Req() req: any) {
+    return this.addManagementService.deletePost(id, req);
+  }
 }
