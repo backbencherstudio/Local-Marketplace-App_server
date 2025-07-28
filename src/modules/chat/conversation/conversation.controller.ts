@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   Controller,
+  Query,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto } from './dto/create-conversation.dto';
@@ -37,13 +38,31 @@ export class ConversationController {
     }
   }
 
-  // for user-specific conversations
+  // for user-specific conversations with optional type filter
   @ApiOperation({ summary: 'Get all conversations for a user' })
-  @Get('user')  
-  async findAllForUser(@Req() req: any) {
-    const userId = req.user.userId; 
+  @Get('user')
+  async findAllForUser(
+    @Req() req: any,
+    @Query('type') type: string, 
+  ) {
+    const userId = req.user.userId;
     try {
-      const conversations = await this.conversationService.findAllByUserId(userId);
+      const conversations = await this.conversationService.findAllByUserId(userId, type);
+      return conversations;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  @ApiOperation({ summary: 'Get Ad response count' })
+  @Get('user/add-response')
+  async findAllForAddResponseUser(@Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      const conversations = await this.conversationService.findConversationsCountByType(userId);
       return conversations;
     } catch (error) {
       return {

@@ -48,7 +48,7 @@
         <!-- Chat output area -->
         <div class="section">
             <div class="section-header">
-                <h4>Chat Messages</h4>
+                <h4>Chat Messages with : <strong id="chatWith"></strong></h4>
             </div>
             <div id="chat"></div>
         </div>
@@ -69,6 +69,7 @@
         let socket;
         let conversation_ID = "";
         const chatBox = document.getElementById('chat');
+        const chatWith = document.getElementById('chatWith');
         const tokenInput = document.getElementById('token');
         const connectBtn = document.getElementById('connectBtn');
         const senderIdInput = document.getElementById('senderId');
@@ -110,13 +111,15 @@
                     }
                 });
 
+                // console.log(response.data.data);
+                // chatWith.textContent = `${response.data.participant.name}`;
                 const messages = response.data.data;
                 chatBox.innerHTML = '';
                 messages.forEach(message => {
                     const messageDiv = document.createElement('div');
                     messageDiv.classList.add('message');
                     messageDiv.classList.add(message.sender.id === senderIdInput.value ? 'self' : 'other');
-                    messageDiv.innerHTML = `<strong>${message.sender.name}:</strong> ${message.message}`;
+                    messageDiv.innerHTML = `${message.message}`;
                     chatBox.appendChild(messageDiv);
                 });
             } catch (error) {
@@ -129,7 +132,7 @@
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             messageElement.classList.add(data.from === senderIdInput.value ? 'self' : 'other');
-            messageElement.innerHTML = `<strong>${data.from}:</strong> ${data.data.message}`;
+            messageElement.innerHTML = `${data.data.message}`;
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;  // Auto scroll to the latest message
         };

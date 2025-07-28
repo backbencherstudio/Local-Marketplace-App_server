@@ -169,10 +169,11 @@ export class ConversationService {
   }
 
   // find all conversation for a specific user
-  async findAllByUserId(userId: string) {
+  async findAllByUserId(userId: string, type?: string) {
     try {
       const conversations = await this.prisma.conversation.findMany({
         where: {
+          type: type as any || undefined,
           OR: [
             { creator_id: userId },
             { participant_id: userId },
@@ -239,6 +240,41 @@ export class ConversationService {
       return {
         success: true,
         data: conversations,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // find all conversation for a specific user
+  async findConversationsCountByType(userId: string) {
+    try {
+      // Group by type and count conversations for each type
+      const conversationCountByType = await this.prisma.conversation.groupBy({
+        by: ['type'], // Group by 'type' column
+        where: {
+          OR: [
+            { creator_id: userId }, // Match conversations where the user is the creator
+            { participant_id: userId }, // Or the participant
+          ],
+        },
+        _count: {
+          id: true, // Count the number of conversations (count by 'id')
+        },
+      });
+
+      // Map the result to the desired structure
+      const result = conversationCountByType.map(item => ({
+        type: item.type,
+        count: item._count.id, // Access the count value
+      }));
+
+      return {
+        success: true,
+        data: result, // Return the result with the type and count
       };
     } catch (error) {
       return {
