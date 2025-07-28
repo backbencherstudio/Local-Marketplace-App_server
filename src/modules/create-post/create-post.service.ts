@@ -539,6 +539,7 @@ export class CreatePostService {
               id: true,
               title: true,
               parent_id: true,
+              parent_name: true,
             },
           },
         },
