@@ -3,10 +3,12 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Category, ServiceStatus } from '@prisma/client';
 import { FirebaseService } from 'src/modules/firebase/firebase.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AddManagementService {
-  constructor(private readonly prisma: PrismaService, private readonly firebaseService: FirebaseService) { }
+  constructor(private readonly prisma: PrismaService, private readonly firebaseService: FirebaseService,    private mailService: MailService,
+) { }
 
 
   //category management methods
@@ -360,7 +362,6 @@ export class AddManagementService {
       data: updatedPost,
     };
   }
-
   //notifications is added into rejectPost method
   async rejectPost(id: string, reason: string, req: any) {
     const userId = req.user.userId;
@@ -447,6 +448,63 @@ export class AddManagementService {
       data: updatedPost,
     };
   }
+//delete post method and sending mail 
+  async deletePost(id: string, req: any) {
+    const userId = req.user.userId;
 
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    if (currentUser.type !== 'admin') {
+      return {
+        success: false,
+        message: 'Only admins can delete posts',
+      };
+    }
+
+    const post = await this.prisma.services.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      return {
+        success: false,
+        message: 'Post not found',
+      };
+    }
+
+    await this.prisma.services.delete({
+      where: { id },
+    });
+
+    await this.mailService.sendDeleteAddMail({
+      email: post.user.email,
+      subject: 'Post Deleted',
+      message: `Your post "${post.title}" has been deleted by the admin.`,
+    });
+
+    return {
+      success: true,
+      message: 'Post deleted successfully',
+      data: post,
+    };
+  }
 
 }

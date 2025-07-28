@@ -515,4 +515,44 @@ export class CreatePostService {
       throw new Error(`Failed to fetch posts for categoryId ${categoryId}`);
     }
   }
+  async getAllposts(){
+    try {
+      const posts = await this.prisma.services.findMany({
+        where: { status: 'active' },
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          thumbnail: true,
+          location: true,
+          price: true,
+          created_at: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              title: true,
+              parent_id: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+      });
+
+      if (posts.length === 0) {
+        return { message: 'No posts found' };
+      }
+
+      return posts;
+    } catch (error) {
+      console.error('Error fetching all posts:', error);
+      throw new Error('Failed to fetch all posts');
+    }
+  }
 }

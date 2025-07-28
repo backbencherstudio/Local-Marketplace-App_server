@@ -55,6 +55,23 @@ export class MailService {
     }
   }
 
+   async sendDeleteAddMail({ email, subject, message }) {
+    try {
+      const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
+      await this.queue.add('sendDeleteAddMail', {
+        to: email,
+        from: from,
+        subject: subject,
+        template: 'delete-add',
+        context: {
+          message: message,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async sendVerificationLink(params: {
     email: string;
     name: string;

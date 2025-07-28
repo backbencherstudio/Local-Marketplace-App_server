@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePostDto } from './dto/create-create-post.dto';
 import { UpdatePostDto } from './dto/update-create-post.dto';
+import { get } from 'http';
 
 @Controller('create-post')
 export class CreatePostController {
@@ -23,6 +24,11 @@ export class CreatePostController {
       @Req() req: any,
     ) {
       return this.createPostService.createPost(createPostDto, files, req);
+    }
+
+    @Get('all-posts')
+    async getAllPostss() {
+      return this.createPostService.getAllposts();
     }
   
     @UseGuards(JwtAuthGuard)
