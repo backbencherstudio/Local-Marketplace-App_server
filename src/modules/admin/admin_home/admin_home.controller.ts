@@ -19,10 +19,6 @@ export class AdminHomeController {
   getTotalUsers() {
     return this.adminHomeService.getTotalUsers();
   }
-  @Get('total-posts')
-  getTotalPosts() {
-    return this.adminHomeService.getTotalPosts();
-  }
   @Get('total-active-posts')
   getTotalActivePosts() {
     return this.adminHomeService.getTotalActivePosts();
@@ -35,20 +31,24 @@ export class AdminHomeController {
   getTotalReports() {
     return this.adminHomeService.getTotalReports();
   }
-  @Get('total-approved-posts')
-  getTotalApprovedPosts() {
-    return this.adminHomeService.getTotalApprovedPosts();
-  }
   @Get('popular-categories')
   getPopularCategories() {
     return this.adminHomeService.getPopularCategories();
-  }
-  @Get('popular-posts')
-  getPopularPosts() {
-    return this.adminHomeService.getPopularPosts();
   }
   @Get('popular-locations')
   getPopularLocations() {
     return this.adminHomeService.getpopularLocations();
   }
+      @Get('status-by-category')
+  async getAdsStatusByCategory() {
+    const data = await this.adminHomeService.getAdsStatus();
+    return data;
+  }
+    @Get(':year')
+  async getUserActivity(@Param('year') year: number) {
+    const activity = await this.adminHomeService.getUserActivityByYear(year);
+    return activity;
+  }
+
+
 }

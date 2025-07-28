@@ -467,4 +467,52 @@ export class CreatePostService {
       throw new Error('Failed to delete post: ' + error.message);
     }
   }
+  async getPostsByCategoryId(categoryId: string, page: number = 0, pageSize: number = 10) {
+    try {
+      const posts = await this.prisma.services.findMany({
+        where: { category_id: categoryId, status: 'active' },
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          thumbnail: true,
+          location: true,
+          price: true,
+          created_at: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+        skip: page * pageSize,
+        take: pageSize,
+      });
+
+      if (posts.length === 0) {
+        return { message: 'No posts found for this category' };
+      }
+
+      const formattedPosts = posts.map(post => ({
+        id: post.id,
+        type: post.type,
+        title: post.title,
+        thumbnail: post.thumbnail,
+        location: post.location,
+        price: post.price,
+        created_at: post.created_at,
+        user_id: post.user.id,
+        user_name: post.user.name,
+        user_email: post.user.email,
+      }));
+
+      return formattedPosts;
+    } catch (error) {
+      console.error(`Error fetching posts for categoryId ${categoryId}:`, error);
+      throw new Error(`Failed to fetch posts for categoryId ${categoryId}`);
+    }
+  }
 }

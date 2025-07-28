@@ -59,5 +59,15 @@ export class CreatePostController {
       const userId = req.user.userId;
       return this.createPostService.getPostById(id, userId);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('/:categoryId')
+    async getPostsByCategoryId(
+      @Param('categoryId') categoryId: string,
+      @Query('page') page: number = 0,
+      @Query('pageSize') pageSize: number = 10
+    ) {
+      return this.createPostService.getPostsByCategoryId(categoryId, page, pageSize);
+    }
  
 }
