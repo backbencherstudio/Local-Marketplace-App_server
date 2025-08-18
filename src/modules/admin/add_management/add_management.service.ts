@@ -7,37 +7,57 @@ import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AddManagementService {
-  constructor(private readonly prisma: PrismaService, private readonly firebaseService: FirebaseService,    private mailService: MailService,
-) { }
+  constructor(private readonly prisma: PrismaService, private readonly firebaseService: FirebaseService, private mailService: MailService,
+  ) { }
 
 
   //category management methods
-  async createCategory(createCategoryDto: CreateCategoryDto) {
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '');
+  }
 
+  async createCategory(createCategoryDto: CreateCategoryDto) {
     const existingCategory = await this.prisma.category.findUnique({
       where: { id: createCategoryDto.parent_id },
       select: { id: true, title: true, parent_name: true, parent_id: true },
     });
+
     if (!existingCategory) {
       return {
         message: 'Parent category not found',
-      }
-    };
+      };
+    }
 
     if (existingCategory.parent_name !== null || existingCategory.parent_id !== null) {
       return {
         message: 'This is not a parent category, you cannot create a subcategory under it',
       };
-
     }
+
+    let categorySlug = this.generateSlug(createCategoryDto.title);
+
+    const existingSlug = await this.prisma.category.findUnique({
+      where: { slug: categorySlug },
+    });
+
+    if (existingSlug) {
+      return {
+        message: 'Slug already exists, please choose a different slug.',
+      };
+    }
+
     const category = await this.prisma.category.create({
       data: {
         title: createCategoryDto.title,
-        slug: createCategoryDto.slug,
+        slug: categorySlug,
         parent_id: createCategoryDto.parent_id,
         parent_name: existingCategory.title,
       },
     });
+
     return category;
   }
   async getAllparent() {
@@ -78,7 +98,6 @@ export class AddManagementService {
       data: existingCategory,
     };
   }
-
   async bulkCreateCommunityCategories(): Promise<any> {
     const parentId = 'cmdl3uinh0005rebw9y4ua65k';
 
@@ -448,7 +467,7 @@ export class AddManagementService {
       data: updatedPost,
     };
   }
-//delete post method and sending mail 
+  //delete post method and sending mail 
   async deletePost(id: string, req: any) {
     const userId = req.user.userId;
 

@@ -21,153 +21,153 @@ export class AuthService {
     private mailService: MailService,
     private firebaseService: FirebaseService,
   ) { }
-async register({
-  name,
-  first_name,
-  last_name,
-  email,
-  password,
-  type,
-  device_token, 
-}: {
-  name: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  password: string;
-  type?: string;
-  device_token?: string;
-}) {
-  try {
+  async register({
+    name,
+    first_name,
+    last_name,
+    email,
+    password,
+    type,
+    device_token,
+  }: {
+    name: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    type?: string;
+    device_token?: string;
+  }) {
+    try {
 
-    console.log('Received device token:', device_token);
-    const userEmailExist = await UserRepository.exist({
-      field: 'email',
-      value: String(email),
-    });
+      console.log('Received device token:', device_token);
+      const userEmailExist = await UserRepository.exist({
+        field: 'email',
+        value: String(email),
+      });
 
-    if (userEmailExist) {
-      return {
-        statusCode: 401,
-        message: 'Email already exists',
-      };
-    }
+      if (userEmailExist) {
+        return {
+          statusCode: 401,
+          message: 'Email already exists',
+        };
+      }
 
-    // Create the new user
-    const user = await UserRepository.createUser({
-      name,
-      first_name,
-      last_name,
-      email,
-      password,
-      type,
-      device_token,
-    });
-    
-    if (user == null || user.success === false || device_token == null) {
-      return {
-        success: false,
-        message: 'Failed to create account',
-      };
-    }
+      // Create the new user
+      const user = await UserRepository.createUser({
+        name,
+        first_name,
+        last_name,
+        email,
+        password,
+        type,
+        device_token,
+      });
 
-    // Create Stripe customer account
-    const stripeCustomer = await StripePayment.createCustomer({
-      user_id: user.data.id,
-      email: email,
-      name: `${first_name} ${last_name}`,
-    });
+      if (user == null || user.success === false || device_token == null) {
+        return {
+          success: false,
+          message: 'Failed to create account',
+        };
+      }
 
-    if (stripeCustomer) {
-      await this.prisma.user.update({
+      // Create Stripe customer account
+      const stripeCustomer = await StripePayment.createCustomer({
+        user_id: user.data.id,
+        email: email,
+        name: `${first_name} ${last_name}`,
+      });
+
+      if (stripeCustomer) {
+        await this.prisma.user.update({
+          where: {
+            id: user.data.id,
+          },
+          data: {
+            billing_id: stripeCustomer.id,
+          },
+        });
+      }
+
+      // Create OTP code
+      const token = await UcodeRepository.createToken({
+        userId: user.data.id,
+        isOtp: true,
+      });
+
+      // Send OTP code to email
+      await this.mailService.sendOtpCodeToEmail({
+        email: email,
+        name: `${first_name} ${last_name}`,
+        otp: token,
+      });
+
+
+      // start notification
+      // Ensure device token is saved correctly and retrieved
+      const userToken = user.data.device_token;
+      if (!userToken) {
+        return {
+          success: false,
+          message: 'User device token not found',
+        };
+      }
+
+      // Get the admin device tokens
+      const admins = await this.prisma.user.findMany({
         where: {
-          id: user.data.id,
+          type: 'admin',
         },
-        data: {
-          billing_id: stripeCustomer.id,
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          device_token: true,
         },
       });
-    }
 
-    // Create OTP code
-    const token = await UcodeRepository.createToken({
-      userId: user.data.id,
-      isOtp: true,
-    });
+      const adminDeviceTokens = admins
+        .filter(a => !!a.device_token)
+        .map(a => ({ id: a.id, device_token: a.device_token }));
 
-    // Send OTP code to email
-    await this.mailService.sendOtpCodeToEmail({
-      email: email,
-      name: `${first_name} ${last_name}`,
-      otp: token,
-    });
+      if (!adminDeviceTokens.length) {
+        return {
+          success: false,
+          message: 'Admin device token not found',
+        };
+      }
 
-
-    // start notification
-    // Ensure device token is saved correctly and retrieved
-    const userToken = user.data.device_token;
-    if (!userToken) {
-      return {
-        success: false,
-        message: 'User device token not found',
-      };
-    }
-
-    // Get the admin device tokens
-    const admins = await this.prisma.user.findMany({
-      where: {
-        type: 'admin', 
-      },
-      select: {
-        id: true,
-        first_name: true,
-        last_name: true,
-        device_token: true,
-      },
-    });
-
-    const adminDeviceTokens = admins
-      .filter(a => !!a.device_token)
-      .map(a => ({ id: a.id, device_token: a.device_token }));
-
-    if (!adminDeviceTokens.length) {
-      return {
-        success: false,
-        message: 'Admin device token not found',
-      };
-    }
-
-    // Send notifications to user
-    await this.firebaseService.sendNotification(
-      user.data.id,
-      userToken,
-      'Welcome to Local Marketplace!',
-      `Hi ${first_name} ${last_name}, your account has been created.`,
-      'android'
-    );
-    
-    //send notification to all admins
-    for (const admin of adminDeviceTokens) {
+      // Send notifications to user
       await this.firebaseService.sendNotification(
-        admin.id,
-        admin.device_token, 
-        'New User Registered',
-        `${first_name} ${last_name} has registered.`,
+        user.data.id,
+        userToken,
+        'Welcome to Local Marketplace!',
+        `Hi ${first_name} ${last_name}, your account has been created.`,
         'android'
       );
+
+      //send notification to all admins
+      for (const admin of adminDeviceTokens) {
+        await this.firebaseService.sendNotification(
+          admin.id,
+          admin.device_token,
+          'New User Registered',
+          `${first_name} ${last_name} has registered.`,
+          'android'
+        );
+      }
+      // end notification
+      return {
+        success: true,
+        message: 'We have sent an OTP code to your email',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
     }
-// end notification
-    return {
-      success: true,
-      message: 'We have sent an OTP code to your email',
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
   }
-}
 
 
 
@@ -899,32 +899,32 @@ async register({
   }
   // --------- end 2FA ---------
 
-// async getUserDeviceToken(userId: string): Promise<string | null> {
-//   const user = await this.prisma.user.findUnique({
-//     where: { id: userId }, 
-//   });
+  // async getUserDeviceToken(userId: string): Promise<string | null> {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: userId }, 
+  //   });
 
-//   return user?.device_token ?? null;
-// }
-// async getAdminDeviceTokens(): Promise<string[]> {
-//   try {
-//     const admins = await this.prisma.user.findMany({
-//       where: { type: 'admin' },
-//        select:{
-//         device_token: true,
-//        }
-//     });
+  //   return user?.device_token ?? null;
+  // }
+  // async getAdminDeviceTokens(): Promise<string[]> {
+  //   try {
+  //     const admins = await this.prisma.user.findMany({
+  //       where: { type: 'admin' },
+  //        select:{
+  //         device_token: true,
+  //        }
+  //     });
 
-//     // Collect all device tokens for admins
-//     const adminDeviceTokens = admins.map(admin => admin.device_token);
-//     console.log(adminDeviceTokens);
-//     return adminDeviceTokens; 
+  //     // Collect all device tokens for admins
+  //     const adminDeviceTokens = admins.map(admin => admin.device_token);
+  //     console.log(adminDeviceTokens);
+  //     return adminDeviceTokens; 
 
-     
-//   } catch (error) {
-//     console.error('Error retrieving device tokens for admins', error);
-//     return [];  
-//   }
-// }
+
+  //   } catch (error) {
+  //     console.error('Error retrieving device tokens for admins', error);
+  //     return [];  
+  //   }
+  // }
 
 }

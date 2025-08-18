@@ -40,8 +40,7 @@ export class ReportController {
     return this.reportService.getAllReportCategories();
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.BUYER)
+  @UseGuards(JwtAuthGuard)
   @Post('create-report/:serviceId')
   createReport(
     @Body() createReportDto: CreateReportDto,
