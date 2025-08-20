@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { UpdatePostDto } from './dto/update-create-post.dto';
 @Injectable()
 export class CreatePostService {
-   constructor(private readonly prisma: PrismaService, private jwtService: JwtService,) { }
+  constructor(private readonly prisma: PrismaService, private jwtService: JwtService,) { }
   async createPost(createSellerDto: CreatePostDto, files: Express.Multer.File[], req: any) {
     try {
       const validServiceTypes = ['Services', 'Jobs', 'For_sale', 'Gigs', 'Community', 'Help'];
@@ -144,6 +144,8 @@ export class CreatePostService {
       throw new Error('Failed to create post: ' + error.message);
     }
   }
+
+
   async getAllPosts(userId: string, page: number = 0, pageSize: number = 10, status?: string) {
     try {
       let whereCondition: any = { user_id: userId };
@@ -515,7 +517,7 @@ export class CreatePostService {
       throw new Error(`Failed to fetch posts for categoryId ${categoryId}`);
     }
   }
-  async getAllposts(){
+  async getAllposts() {
     try {
       const posts = await this.prisma.services.findMany({
         where: { status: 'active' },

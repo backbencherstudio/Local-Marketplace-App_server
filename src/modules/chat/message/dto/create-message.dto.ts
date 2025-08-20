@@ -5,15 +5,16 @@ export class CreateMessageDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty()
-  receiver_id: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty()
   conversation_id: string;
 
   @IsOptional()
   @IsString()
   @ApiProperty()
   message?: string;
+
+  @IsOptional()
+  @IsString({ each: true })
+  @ApiProperty()
+  attachments?: string[];
+
 }

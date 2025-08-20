@@ -52,6 +52,7 @@ app.use(
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
+      
     }),
   );
   app.useGlobalFilters(new CustomExceptionFilter());

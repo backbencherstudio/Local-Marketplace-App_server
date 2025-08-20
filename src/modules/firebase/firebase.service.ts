@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { FcmNotificationService } from 'src/modules/fcm_notification/fcm_notification.service';
 import { use } from 'passport';
+import * as path from 'path';
+
 
 @Injectable()
 export class FirebaseService {
@@ -12,7 +14,7 @@ export class FirebaseService {
   ) {
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert('D:/BBS WORKING PROJECTS/Local-Marketplace-App_efren/firebase-secret/firebase-secret.json'),
+        credential: admin.credential.cert(path.join(__dirname, '..', '..', '..', 'firebase-secret', 'firebase-secret.json')),
       });
     } else {
       console.log('Firebase already initialized');

@@ -44,11 +44,14 @@ export class ChatRepository {
     if (!user) {
       return;
     }
+
+    const data = {
+      availability: status
+    }
+
     return await prisma.user.update({
       where: { id: user_id },
-      data: {
-        availability: status,
-      },
+      data,
     });
   }
 }

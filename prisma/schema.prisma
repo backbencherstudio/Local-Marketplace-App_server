@@ -48,6 +48,7 @@ model User {
   id           String  @id @default(cuid())
   status       Int?    @default(1) @db.SmallInt
   availability String?
+  last_availability_at DateTime?  @updatedAt @db.Timestamptz
 
   email_verified_at DateTime?
   email             String?   @unique
@@ -102,6 +103,7 @@ model User {
   Report               Report[]
   FCM_notification     FCM_notification[]
 
+
   created_at DateTime  @default(now())
   updated_at DateTime  @default(now())
   deleted_at DateTime?
@@ -141,6 +143,10 @@ model Category {
   title       String?
   slug        String?    @unique
   Services    Services[]
+
+
+  // conversation count
+  conversation_count Int? @default(0)
 
   @@map("categories")
 }
@@ -216,6 +222,9 @@ model Services {
   is_reported Int?      @default(0) // why // why
   reported_at DateTime?
   Report      Report[]
+
+  conversation Conversation?
+  // conversation_reports ConversationReport[]
 
   @@map("services")
 }
@@ -396,6 +405,11 @@ enum ConversationType {
   Community
 }
 
+enum ConType {
+  general
+  ad_responses
+}
+
 // this table stores conversation
 model Conversation {
   id             String  @id @default(cuid())
@@ -405,14 +419,51 @@ model Conversation {
   participant    User?   @relation("participant", fields: [participant_id], references: [id])
 
   type     ConversationType?
+
+  conversation_type ConType? @default(general)
+
+
+  last_message_id String? @unique
+  last_message    Message? @relation("last_message",fields: [last_message_id], references: [id])
+
+  post_id     String? @unique
+  post        Services? @relation(fields: [post_id], references: [id])
+
+  deleted_by_creator     DateTime?
+  deleted_by_participant DateTime?
+  blocked_by_creator     Boolean   @default(false)
+  blocked_by_participant Boolean   @default(false)
+
   messages Message[]
+  // conversation_reports ConversationReport[]
 
   created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
   deleted_at DateTime?
 
   @@map("conversations")
 }
+
+// model ConversationReport {
+//   id         String    @id @default(cuid())
+//   created_at DateTime  @default(now())
+//   updated_at DateTime  @updatedAt
+
+//   user_id String?
+//   user    User?   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+//   conversation_id String?
+//   conversation    Conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+//   post_id String?
+//   post    Services?   @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+//   type     String?
+//   conversation_type String?
+//   description String?
+
+//   @@map("conversation_reports")
+// }
 
 enum MessageStatus {
   PENDING
@@ -428,6 +479,8 @@ model Message {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
+  is_read         Boolean     @default(false)
+
   status MessageStatus? @default(PENDING)
 
   sender_id String?
@@ -439,10 +492,15 @@ model Message {
   conversation_id String?
   conversation    Conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
 
-  attachment_id String?
-  attachment    Attachment? @relation(fields: [attachment_id], references: [id])
+  conversation_as_last_message Conversation? @relation("last_message")
 
-  message String?
+ 
+  // attachment_id String?
+  // attachment    Attachment? @relation(fields: [attachment_id], references: [id])
+
+  attachments     Attachment[]
+
+  message String?   @db.Text
 
   @@map("messages")
 }
@@ -460,7 +518,9 @@ model Attachment {
   file     String?
   file_alt String?
 
-  messages Message[]
+  message_id String?
+  message    Message? @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  
 
   @@map("attachments")
 }

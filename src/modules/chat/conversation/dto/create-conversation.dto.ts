@@ -22,5 +22,36 @@ export class CreateConversationDto {
   @ApiProperty({
     description: 'The type of conversation (Services | Jobs | For_sale | Help | Gigs | Community | Profile)',
   })
-  type: ConversationType; 
+  type: ConversationType;
+}
+
+export class OneOnOneConversationDto {
+  
+  creator_id?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'The id of the participant',
+  })
+  participant_id: string;
+
+}
+
+export class CategoryBasedConversationDto {
+  creator_id?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'The id of the participant',
+  })
+  participant_id: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'The id of the post',
+  })
+  post_id: string;
 }
