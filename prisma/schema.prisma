@@ -429,8 +429,13 @@ model Conversation {
   post_id     String? @unique
   post        Services? @relation(fields: [post_id], references: [id])
 
-  deleted_by_creator     DateTime?
-  deleted_by_participant DateTime?
+  // deleted
+  deleted_by_creator     Boolean   @default(false)
+  deleted_by_participant Boolean   @default(false)
+  deleted_by_creator_at     DateTime?
+  deleted_by_participant_at DateTime?
+
+  // blocked
   blocked_by_creator     Boolean   @default(false)
   blocked_by_participant Boolean   @default(false)
 

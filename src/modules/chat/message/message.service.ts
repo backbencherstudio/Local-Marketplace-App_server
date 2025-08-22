@@ -138,6 +138,8 @@ export class MessageService {
           id: true,
           participant_id: true,
           creator_id: true,
+          deleted_by_creator: true,
+          deleted_by_participant: true,
         },
       });
 
@@ -181,13 +183,73 @@ export class MessageService {
       });
 
       // Update conversation last message
-      await this.prisma.conversation.update({
+      const updatedConversation = await this.prisma.conversation.update({
         where: { id: createDto.conversation_id },
         data: {
           updated_at: new Date(),
           last_message_id: message.id,
+          deleted_by_creator: false,
+          deleted_by_participant: false,
         },
+        select: {
+          id: true,
+          creator_id: true,
+          participant_id: true,
+          created_at: true,
+          updated_at: true,
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              first_name: true,
+              last_name: true,
+              avatar: true,
+              availability: true,
+            },
+          },
+          participant: {
+            select: {
+              id: true,
+              name: true,
+              first_name: true,
+              last_name: true,
+              avatar: true,
+              availability: true,
+            },
+          },
+          conversation_type: true,
+          last_message: {
+            select: {
+              id: true,
+              message: true,
+              created_at: true,
+              sender_id: true,
+            },
+          },
+        }
       });
+
+    
+        if (updatedConversation.creator.avatar) {
+          updatedConversation.creator['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + updatedConversation.creator.avatar,
+          );
+        }
+        if (updatedConversation.participant.avatar) {
+          updatedConversation.participant['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + updatedConversation.participant.avatar,
+          );
+        }
+      
+
+
+      if(conversation.deleted_by_creator){
+        this.messageGateway.server.to(conversation.creator_id).emit('conversation', updatedConversation)
+      }else if(conversation.deleted_by_participant){
+        this.messageGateway.server.to(conversation.participant_id).emit('conversation', updatedConversation)
+      }
+
+      
 
       return {
         success: true,

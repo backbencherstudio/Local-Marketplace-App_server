@@ -197,6 +197,9 @@ export class ConversationService {
         participant_id: true,
         created_at: true,
         updated_at: true,
+        type: true,
+        deleted_by_creator: true,
+        blocked_by_participant: true,
         creator: {
           select: {
             id: true,
@@ -252,7 +255,16 @@ export class ConversationService {
 
 
     if (conversation) {
-
+      if(conversation.deleted_by_creator) {
+        await this.prisma.conversation.update({
+          where: {
+            id: conversation.id,
+          },
+          data: {
+            deleted_by_creator: false,
+          },
+        });
+      }
       if (conversation.creator.avatar) {
         conversation.creator['avatar_url'] = SojebStorage.url(
           appConfig().storageUrl.avatar + conversation.creator.avatar,
@@ -279,6 +291,9 @@ export class ConversationService {
         participant_id: true,
         created_at: true,
         updated_at: true,
+        type: true,
+        deleted_by_creator: true,
+        blocked_by_participant: true,
         creator: {
           select: {
             id: true,
@@ -394,6 +409,8 @@ export class ConversationService {
         created_at: true,
         updated_at: true,
         type: true,
+        deleted_by_creator: true,
+        blocked_by_participant: true,
         creator: {
           select: {
             id: true,
@@ -454,6 +471,16 @@ export class ConversationService {
 
 
     if (conversation) {
+      if(conversation.deleted_by_creator) {
+        await this.prisma.conversation.update({
+          where: {
+            id: conversation.id,
+          },
+          data: {
+            deleted_by_creator: false,
+          },
+        });
+      }
       if (conversation.creator.avatar) {
         conversation.creator['avatar_url'] = SojebStorage.url(
           appConfig().storageUrl.avatar + conversation.creator.avatar,
@@ -481,6 +508,8 @@ export class ConversationService {
         created_at: true,
         updated_at: true,
         type: true,
+        deleted_by_creator: true,
+        blocked_by_participant: true,
         creator: {
           select: {
             id: true,
@@ -559,10 +588,12 @@ export class ConversationService {
           {
             creator_id: userId,
             blocked_by_creator: false,
+            deleted_by_creator: false,
           },
           {
             participant_id: userId,
             blocked_by_participant: false,
+            deleted_by_participant: false,
           },
         ]
       }
@@ -601,10 +632,12 @@ export class ConversationService {
           {
             creator_id: userId,
             blocked_by_creator: false,
+            deleted_by_creator: false,
           },
           {
             participant_id: userId,
             blocked_by_participant: false,
+            deleted_by_participant: false,
           },
         ]
       },
@@ -634,10 +667,12 @@ export class ConversationService {
           {
             blocked_by_creator: false,
             creator_id: userId,
+            deleted_by_creator: false,
           },
           {
             participant_id: userId,
             blocked_by_participant: false,
+            deleted_by_participant: false,
           },
         ]
       },
@@ -724,10 +759,12 @@ export class ConversationService {
             {
               creator_id: userId,
               blocked_by_creator: false,
+              deleted_by_creator: false,
             },
             {
               participant_id: userId,
               blocked_by_participant: false,
+              deleted_by_participant: false,
             },
           ]
         },
@@ -1250,29 +1287,45 @@ export class ConversationService {
         ]
       },
       select: {
-        id: true
+        id: true,
+        creator_id: true,
+        participant_id: true,
+        deleted_by_creator: true,
+        deleted_by_participant: true,
+        deleted_by_creator_at: true,
+        deleted_by_participant_at: true,
       }
     });
   
     if (!conversation) {
       throw new BadRequestException('Conversation not found');
     }
+
+    const where = {
+      conversation_id: conversationId,
+    }
+
+    // create condition for messages
+    if(conversation.creator_id === userId && conversation.deleted_by_creator_at) {
+        where['created_at'] = {
+          gt: conversation.deleted_by_creator_at,
+        };
+    } else if(conversation.participant_id === userId && conversation.deleted_by_participant_at) {
+      where['created_at'] = {
+        gt: conversation.deleted_by_participant_at,
+      };
+    }
+
   
 
     // Get total message count for pagination
     const totalMessages = await this.prisma.message.count({
-      where: {
-        conversation_id: conversationId,
-        deleted_at: null, // Only count non-deleted messages
-      },
+      where,
     });
   
     // Get paginated messages
     const messages = await this.prisma.message.findMany({
-      where: {
-        conversation_id: conversationId,
-        deleted_at: null, // Only include non-deleted messages
-      },
+      where,
       select: {
         id: true,
         message: true,
@@ -1296,6 +1349,11 @@ export class ConversationService {
   
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalMessages / pageSize);
+
+    
+    this.messageGateway.server.to(conversation?.creator_id === userId? conversation.participant_id: conversation.creator_id).emit('read_messages', {
+      conversationId: conversationId,
+    });
   
     return {
       success: true,
@@ -1544,56 +1602,56 @@ export class ConversationService {
   //   }
   // }
 
-  // async softDeleteConversation(id: string, userId: string) {
-  //   try {
-  //     const conversation = await this.prisma.conversation.findFirst({
-  //       where: {
-  //         id,
-  //         OR: [{ creator_id: userId }, { participant_id: userId }],
-  //       },
-  //     });
+  async softDeleteConversation(id: string, userId: string) {
+    try {
+      const conversation = await this.prisma.conversation.findFirst({
+        where: {
+          id,
+          OR: [{ creator_id: userId }, { participant_id: userId }],
+        },
+      });
 
-  //     if (!conversation) return { success: false, message: 'Conversation not found' };
+      if (!conversation) throw new BadRequestException('Conversation not found');
 
-  //     const isCreator = conversation.creator_id === userId;
+      const isCreator = conversation.creator_id === userId;
 
-  //     await this.prisma.conversation.update({
-  //       where: { id },
-  //       data: isCreator
-  //         ? { deleted_by_creator: new Date() }
-  //         : { deleted_by_participant: new Date() },
-  //     });
+      await this.prisma.conversation.update({
+        where: { id },
+        data: isCreator
+          ? { deleted_by_creator_at: new Date(), deleted_by_creator: true }
+          : { deleted_by_participant_at: new Date(), deleted_by_participant: true },
+      });
 
-  //     await this.messageGateway.server.to(userId).emit('conversation-soft-deleted', {
-  //       conversation_id: id,
-  //       by: userId,
-  //     });
+      await this.messageGateway.server.to(userId).emit('conversation-soft-deleted', {
+        conversation_id: id,
+        by: userId,
+      });
 
 
-  //     // await this.messageGateway.server.to(
-  //     //   conversation.creator_id
-  //     // ).emit('conversation-soft-deleted', {
-  //     //   conversation_id: id,
-  //     //   by: userId,
-  //     // });
+      // await this.messageGateway.server.to(
+      //   conversation.creator_id
+      // ).emit('conversation-soft-deleted', {
+      //   conversation_id: id,
+      //   by: userId,
+      // });
 
-  //     // await this.messageGateway.server.to(
-  //     //   conversation.participant_id
-  //     // ).emit('conversation-soft-deleted', {
-  //     //   conversation_id: id,
-  //     //   by: userId,
-  //     // });
+      // await this.messageGateway.server.to(
+      //   conversation.participant_id
+      // ).emit('conversation-soft-deleted', {
+      //   conversation_id: id,
+      //   by: userId,
+      // });
 
-  //     return {
-  //       success: true,
-  //       message: 'Conversation deleted for current user',
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       message: "Failed to delete conversation",
-  //     }
-  //   }
-  // }
+      return {
+        success: true,
+        message: 'Conversation deleted for current user',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Failed to delete conversation",
+      }
+    }
+  }
 
 }

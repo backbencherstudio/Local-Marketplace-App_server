@@ -195,18 +195,18 @@ export class ConversationController {
   //  }
   // }
 
-  // @Delete(':id/soft-delete')
-  // async softDelete(@Param('id') id: string, @Req() req: Request) {
-  //  try {
-  //   const userId = req.user.userId;
-  //   return await this.conversationService.softDeleteConversation(id, userId);
-  //  } catch (error) {
-  //   return {
-  //     success: false,
-  //     message: "Failed to soft delete conversation"
-  //   }
-  //  }
-  // }
+  @Delete(':id/delete')
+  async softDelete(@Param('id') id: string, @Req() req: Request) {
+   try {
+    const userId = req.user.userId;
+    return await this.conversationService.softDeleteConversation(id, userId);
+   } catch (error) {
+    return {
+      success: false,
+      message: "Failed to soft delete conversation"
+    }
+   }
+  }
 
 
   // @Patch(':id/read')
