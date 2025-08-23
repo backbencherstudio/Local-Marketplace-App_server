@@ -1200,6 +1200,7 @@ export class ConversationService {
         created_at: true,
         updated_at: true,
         type: true,
+        conversation_type: true,
         blocked_by_creator: true,
         blocked_by_participant: true,
         post: {
@@ -1350,6 +1351,17 @@ export class ConversationService {
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalMessages / pageSize);
 
+    messages.forEach((message) => {
+      if (message.attachments) {
+        message.attachments.forEach((attachment) => {
+          if (attachment.file) {
+            attachment['file_url'] = SojebStorage.url(
+              appConfig().storageUrl.attachment + attachment.file,
+            );
+          }
+        });
+      }
+    });
     
     this.messageGateway.server.to(conversation?.creator_id === userId? conversation.participant_id: conversation.creator_id).emit('read_messages', {
       conversationId: conversationId,
