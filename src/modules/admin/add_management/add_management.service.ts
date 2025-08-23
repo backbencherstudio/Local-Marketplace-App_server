@@ -155,6 +155,7 @@ export class AddManagementService {
         id: true,
         title: true,
         thumbnail: true,
+        category_id: true,
         category: {
           select: {
             parent_name: true,
@@ -194,6 +195,7 @@ export class AddManagementService {
         id: true,
         title: true,
         thumbnail: true,
+        category_id: true,
         category: {
           select: {
             parent_name: true,
@@ -208,12 +210,14 @@ export class AddManagementService {
       },
     });
 
+
     const formattedPosts = posts.map(post => ({
       id: post.id,
       title: post.title,
       thumbnail: post.thumbnail,
-      category: post.category.parent_name,
       username: post.user.username,
+      category_id: post.category_id,
+      categoryname : post.category.parent_name,
       location: post.location,
     }));
 
@@ -223,6 +227,10 @@ export class AddManagementService {
     };
 
   }
+
+
+
+  
   async getOnePost(id: string) {
     const post = await this.prisma.services.findUnique({
       where: {
@@ -277,6 +285,13 @@ export class AddManagementService {
 
     return formattedPost;
   }
+
+
+
+
+
+
+
   async approvePost(id: string, req: any) {
     const userId = req.user.userId;
 
@@ -525,5 +540,4 @@ export class AddManagementService {
       data: post,
     };
   }
-
 }
