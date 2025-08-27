@@ -26,15 +26,13 @@ export class ReportController {
     return this.reportService.createReportCategory(createReportCategoryDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard)
   @Get('report-types')
   getAllReportTypes() {
     return this.reportService.getAllReportTypes();
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard)
   @Get('report-categories')
   getAllReportCategories() {
     return this.reportService.getAllReportCategories();
