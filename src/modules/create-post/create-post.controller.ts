@@ -42,6 +42,17 @@ export class CreatePostController {
       const userId = req.user.userId;
       return await this.createPostService.getAllPosts(userId, page, pageSize, status);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('/favorite-posts')
+    async getFavoritePosts(
+      @Req() req: any,
+      @Query('page') page: number = 0,
+      @Query('pageSize') pageSize: number = 10,
+    ) {
+      const userId = req.user.userId;
+      return await this.createPostService.getFavoritePosts(userId, page, pageSize);
+    }
   
     @UseGuards(JwtAuthGuard)
     @Put(':id')
@@ -75,5 +86,15 @@ export class CreatePostController {
     ) {
       return this.createPostService.getPostsByCategoryId(categoryId, page, pageSize);
     }
+    @UseGuards(JwtAuthGuard)
+    @Post('favorite/:postId')
+    async addToFavorites(
+      @Param('postId') postId: string,
+      @Req() req: any,
+    ) {
+      const userId = req.user.userId;
+      return this.createPostService.toggleFavorite(userId, postId);
+    }
+    
  
 }

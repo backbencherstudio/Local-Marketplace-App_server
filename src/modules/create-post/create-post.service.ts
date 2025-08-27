@@ -558,4 +558,119 @@ export class CreatePostService {
       throw new Error('Failed to fetch all posts');
     }
   }
+
+  //make a post favorite
+  async toggleFavorite(userId: string, postId: string) {
+    try {
+      console.log('postId:', postId, 'userId:', userId);
+  
+      const chekUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, type: true },
+      });
+  
+      if (!chekUser) throw new Error('User not found');
+  
+      const post = await this.prisma.services.findUnique({
+        where: { id: postId },
+      });
+      if (!post) throw new Error('Post not found');
+  
+      const existingFavorite = await this.prisma.favorite.findUnique({
+        where: {
+          user_id_service_id: {
+            user_id: userId,
+            service_id: postId,
+          },
+        },
+      });
+  
+      if (existingFavorite) {
+        await this.prisma.favorite.delete({
+          where: { id: existingFavorite.id },
+        });
+        return { message: 'Post unfavorited successfully' };
+      } else {
+        await this.prisma.favorite.create({
+          data: {
+            user_id: userId,
+            service_id: postId,
+          },
+        });
+        return { message: 'Post favorited successfully' };
+      }
+    } catch (error) {
+      console.error('Error toggling favorite status: ', error);
+      throw new Error('Failed to toggle favorite status: ' + error.message);
+    }
+  }
+
+  //get all favorite posts of a user
+  async getFavoritePosts(userId: string, page: number = 0, pageSize: number = 10) {
+    try {
+      const chekUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, type: true },
+      });
+  
+      if (!chekUser) throw new Error('User not found');
+  
+      const favorites = await this.prisma.favorite.findMany({
+        where: { user_id: userId },
+        include: {
+          service: {
+            where: { status: 'active' },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              category: {
+                select: {
+                  id: true,
+                  title: true,
+                  parent_id: true,
+                },
+              },
+            },
+          },
+        },
+        skip: page * pageSize,
+        take: pageSize,
+      });
+  
+      if (favorites.length === 0) {
+        return { message: 'No favorite posts found for this user' };
+      }
+  
+      const formattedFavorites = favorites
+        .filter(fav => fav.service) // Filter out null services
+        .map(fav => ({
+          favorite_id: fav.id,
+          favorited_at: fav.created_at,
+          post_id: fav.service.id,
+          type: fav.service.type,
+          title: fav.service.title,
+          thumbnail: fav.service.thumbnail,
+          location: fav.service.location,
+          price: fav.service.price,
+          created_at: fav.service.created_at,
+          user_id: fav.service.user.id,
+          user_name: fav.service.user.name,
+          user_email: fav.service.user.email,
+          category_id: fav.service.category.id,
+          category_title: fav.service.category.title,
+          category_parent_id: fav.service.category.parent_id || null,
+        }));
+  
+      return formattedFavorites;
+    } catch (error) {
+      console.error(`Error fetching favorite posts for userId ${userId}:`, error);
+      throw new Error(`Failed to fetch favorite posts for userId ${userId}`);
+    }
+  }
+  
 }
