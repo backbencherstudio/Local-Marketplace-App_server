@@ -169,9 +169,6 @@ export class AuthService {
     }
   }
 
-
-
-
   async login({ email, userId }) {
     try {
       const payload = { email: email, sub: userId };
